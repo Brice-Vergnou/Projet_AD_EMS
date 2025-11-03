@@ -1,0 +1,78 @@
+---
+title: "Projet_AD_EMS"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+
+```
+
+``` r
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(FactoMineR)
+library(factoextra)
+library(corrplot)
+library(reticulate)
+
+```
+
+```{r}
+#| eval: false 
+gym<-read.csv("DataGym-projet4modIA-2526.csv" , sep=" ")
+summary(gym)
+```
+
+You can add options to executable code like this
+
+```{r}
+respca<-PCA(gym,scale.unit=T ,graph=F , quali.sup=c(2,8))
+respca$eig
+sum(respca$eig[,1])
+fviz_eig(respca)
+```
+
+---- On remarque bien l'importance de de réduire (sinon les variablees calories domaine sur l'axe et on aura pas une bonne analyse de donnée) ici on note qu'on peut trés bien que garder les 5 premieres variables car c'est là ou les variance expliquées couvrent 86% de l'informations —-
+
+```{r}
+respca$var$cos2 
+respca$var$contrib
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r}
+respca$var$coord
+respca$ind$coord
+fviz_pca_ind(respca)
+
+
+```
+
+----- On peut pas lire grande chose la dessus par contre on a quand meme des cluster qui se crée mais on va pas trop les caractéristiques derriere cette répartition—–
+
+```{r}
+fviz_pca_var(respca)
+```
+
+------- pour le cercle de corrélation , on voit que (fat) et (calories,duration ....) manipulent la 1er dimension mais il sont
+
+```{r}
+qqnorm(gym[,7])
+```
