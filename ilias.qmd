@@ -1,0 +1,78 @@
+---
+title: "ilias_v2"
+format: html
+editor: visual
+---
+
+```{r}
+#| warning: false
+#| message: false
+
+library(ggplot2)
+library(FactoMineR)
+library(factoextra)
+library(reticulate)
+library(ggpubr)
+```
+
+```{r}
+gym_data <- read.table("DataGym-projet4modIA-2526.csv", header = TRUE, sep = " ", comment.char = "")
+```
+
+```{r}
+knitr::kable(gym_data,align='c')
+```
+
+```{r}
+gym_data_qual = gym_data[,c("gender", "type", "freq", "level")]
+gym_data_qual$gender <- as.factor(gym_data_qual$gender)
+gym_data_qual$type <- as.factor(gym_data_qual$type)
+gym_data_qual$freq <- as.factor(gym_data_qual$freq)
+gym_data_qual$level <- as.factor(gym_data_qual$level)
+head(gym_data_qual)
+```
+
+```{r}
+resMCA<-MCA(gym_data_qual, graph=F) 
+resMCA$eig 
+resMCA$col$coord
+```
+
+```{r}
+fviz_mca(resMCA,
+         invisible = "ind")
+```
+
+```{r}
+fviz_contrib(resMCA, axes = 1, choice = "var")
+fviz_contrib(resMCA, axes = 2, choice = "var")
+fviz_contrib(resMCA, axes = 3, choice = "var")
+fviz_contrib(resMCA, axes = 4, choice = "var")
+fviz_contrib(resMCA, axes = 5, choice = "var")
+```
+
+```{r}
+gym_data_qual = gym_data[,c("gender", "type")]
+gym_data_qual$gender <- as.factor(gym_data_qual$gender)
+gym_data_qual$type <- as.factor(gym_data_qual$type)
+head(gym_data_qual)
+```
+
+```{r}
+resMCA<-MCA(gym_data_qual, graph=F) 
+resMCA$eig 
+resMCA$col$coord
+```
+
+```{r}
+fviz_mca(resMCA, 
+         invisible = "ind"
+         )
+```
+
+```{r}
+fviz_contrib(resMCA, axes = 1, choice = "var")
+fviz_contrib(resMCA, axes = 2, choice = "var")
+fviz_contrib(resMCA, axes = 3, choice = "var")
+fviz_contrib(resMCA, axes = 4, choice = "var")
+```
