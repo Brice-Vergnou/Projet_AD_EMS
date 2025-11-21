@@ -36,7 +36,11 @@ library(reticulate)
 ```{r}
 #| eval: false 
 gym<-read.csv("DataGym-projet4modIA-2526.csv" , sep=" ")
+gym$gender=as.factor(gym$gender)
+gym$type=as.factor(gym$type)
+gym$freq=as.factor(gym$freq)
 summary(gym)
+
 ```
 
 You can add options to executable code like this
@@ -60,19 +64,97 @@ The `echo: false` option disables the printing of code (only output is displayed
 ```{r}
 respca$var$coord
 respca$ind$coord
+
 fviz_pca_ind(respca)
+
+fviz_pca_ind(respca,
+             habillage = gym$gender,   # variable qualitative pour colorier
+             legend.title = "Gender")
+
+fviz_pca_ind(respca,
+             habillage = gym$type,   # variable qualitative pour colorier
+             legend.title = "Type")
+fviz_pca_ind(respca,
+             habillage = gym$freq,   # variable qualitative pour colorier
+             legend.title = "Fréquence")
 
 
 ```
 
 ----- On peut pas lire grande chose la dessus par contre on a quand meme des cluster qui se crée mais on va pas trop les caractéristiques derriere cette répartition—–
 
+------ on a colorié les points en par gendre , type et freq , ce qu'on tire c'est que il ya une distinction sur l'axe 2 ou on trouve que les hommes ont plus de poids,taille,bmi... par rapport au femme.
+
+On peut rien savoir par rapport au type il sont tous mélangé
+
+On remarque que la freq dirige l'axe 1 plus qu'on avance vers la droite plus les fréquence augmente et ce qui est logique puisque dans notre cerle de corrélation plus on avance vers le droite plus on a un grand nombre de calories brulées et de période dans la salle ce qui est expliqué par une fréquence importante dans le gym——
+
 ```{r}
-fviz_pca_var(respca)
+fviz_pca_var(respca, repel=T)
 ```
 
-------- pour le cercle de corrélation , on voit que (fat) et (calories,duration ....) manipulent la 1er dimension mais il sont
+,------- pour le cercle de corrélation , on voit que (fat) et (calories,duration ....) manipulent la 1er dimension mais il sont chacune directionne l'axe 1 inversement ce qui est bien logique
+
+Les variables poids , rétension d'eau ,taille directionne le 2eme axe factoriel ———
 
 ```{r}
-qqnorm(gym[,7])
+qqnorm(gym[,7]) 
+#qqplot(gym[,7])
+shapiro.test(gym$calories[gym$gender == "Male"])
+shapiro.test(gym$calories[gym$gender == "Female"])
+shapiro.test(gym$calories)
+
+```
+
+------ On peut dire que la variable calorie suit une loi normale (APPARAMENT ON PEUT PAS RÉPONDRE À CETTE QUESTION POUR L'INSTANT CAR ON VA FAIRE LES TESTES DE NORMALITÉ EN JANVIER)
+
+Chat a donné cette proposition de syntaxe donc on voit que la p-valeur est trop basse pour les hommes et les femmes donc la variable calorie n'est pas normal ——-
+
+```{r}
+#test_chi2_pour tester l'indépendance entre la variabe genre et calories (quali/quanti) donc on peut pas faire un test X2
+#tab<- table(gym$gender, gym$calories)
+#chisq.test(tab)
+
+
+t.test(calories ~ gender, data = gym) #test de student qui est élligible que si la variable calories suit une loi normal
+
+anova <- aov(calories ~ gender, data = gym)
+summary(ano)
+
+```
+
+------ en faisant une anova 1 facteur entre la variable "calories bruéulé" et celle de "gendre" on trouve bien que la p-valeur est trés basse donc le nombre de calories dépend du genre ——
+
+```{r}
+sub1 <- subset(gym, type =="Yoga" )
+sub2 <- subset(gym, type =="HIIT" )
+sub3 <- subset(gym, type =="Cardio" )
+sub4 <- subset(gym, type == "Strength")
+
+#test_anova_un_facteur_pour tester l'indépendance entre la variabe genre et calories pour le type de sport=Yoga 
+anova1 <- aov(calories ~ gender, data = sub1)
+summary(anova1)
+#test_anova_un_facteur_pour tester l'indépendance entre la variabe genre et calories pour le type de sport=HIIT
+anova2 <- aov(calories ~ gender, data = sub2)
+summary(anova2)
+#test_anova_un_facteur_pour tester l'indépendance entre la variabe genre et calories pour le type de sport=Cardio 
+anova3 <- aov(calories ~ gender, data = sub3)
+summary(anova3)
+#test_anova_un_facteur_pour tester l'indépendance entre la variabe genre et calories pour le type de sport=Strength
+anova4 <- aov(calories ~ gender, data = sub4)
+summary(anova4)
+
+```
+
+```{r}
+#test_chi2_pour tester l'indépendance entre la variabe genre et type
+tab5 <- table(gym$type, gym$gender)
+chisq.test(tab5)
+
+```
+
+```{r}
+#test_chi2_pour tester l'indépendance entre la variabe genre et level 
+tab6 <- table(gym$level, gym$gender)
+chisq.test(tab6)
 ```
