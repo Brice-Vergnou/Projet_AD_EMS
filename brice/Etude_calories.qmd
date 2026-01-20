@@ -1,0 +1,175 @@
+---
+title: "Analyse du nombre de calories brûlées"
+author: "À compléter"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+lang: fr
+fontsize: 11pt
+geometry: margin=2cm
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center"
+)
+
+library(tidyverse)
+library(leaps)
+
+data <- read.csv("../DataGym-projet4modIA-2526.csv", sep = " ")
+
+data$gender <- as.factor(data$gender)
+data$type   <- as.factor(data$type)
+data$level  <- as.factor(data$level)
+```
+
+## Étude du nombre de calories brûlées
+
+Cette partie vise à modéliser le nombre de calories brûlées au cours d’une séance d’entraînement en fonction
+des variables explicatives disponibles.
+
+### Modélisation à partir des variables quantitatives
+
+Nous ajustons un modèle de **régression linéaire multiple** reliant le nombre de calories brûlées aux variables
+quantitatives du jeu de données.
+
+$$
+\text{Calories}_i
+= \beta_0
++ \beta_1 \text{age}_i
++ \beta_2 \text{weight}_i
++ \beta_3 \text{height}_i
++ \beta_4 \text{bpm\_ave}_i
++ \beta_5 \text{duration}_i
++ \beta_6 \text{fat}_i
++ \beta_7 \text{water}_i
++ \beta_8 \text{freq}_i
++ \beta_9 \text{bmi}_i
++ \varepsilon_i
+$$
+
+```{r}
+model_quant <- lm(
+  calories ~ age + weight + height + bpm_ave +
+    duration + fat + water + freq + bmi,
+  data = data
+)
+```
+
+```{r fig-diagnostic-quanti, fig.width=4, fig.height=4, fig.cap="Résidus du modèle linéaire quantitatif"}
+par(mfrow = c(2,2))
+plot(model_quant)
+par(mfrow = c(1,1))
+```
+
+Dans la @fig-diagnostic-quanti, les résidus sont globalement centrés autour de zéro, ce qui valide l’hypothèse d’espérance nulle des erreurs.
+Le Q–Q plot indique une déviation modérée à la normalité dans les queues, et le graphique « Scale–Location » suggère une légère
+hétéroscédasticité, sans observation fortement influente. En ajoutant des interactions, on voit dans la @fig-diagnostic-quanti-interact que cela permet d’améliorer la qualité des résidus, notamment en réduisant la courbure observée précédemment. Cependant, ce modèle devient très complexe, avec un grand nombre de paramètres, ce qui peut conduire à du sur-ajustement. Cela justifie l’utilisation d’une méthode de sélection de variables afin d’obtenir un modèle plus simple et plus interprétable.
+
+```{r}
+model2 <- lm(calories ~ (age + weight + height + bpm_ave +
+               duration + fat + water + freq + bmi)^2,
+               data = data)
+```
+
+```{r fig-diagnostic-quanti-interact, fig.width=4, fig.height=4, fig.cap="Résidus du modèle linéaire quantitatif avec interactions"}
+par(mfrow=c(2,2))
+plot(model2)
+par(mfrow=c(1,1))
+```
+
+---
+
+### Effet des variables qualitatives : niveau et type de sport
+
+Nous étudions l’effet du niveau d’expérience et du type de sport sur les calories brûlées à l’aide d’une
+**ANOVA à deux facteurs avec interaction**.
+
+$$Y_{ijk} = \mu + \alpha_i + \beta_j + (\alpha\beta)_{ij} + \varepsilon_{ijk},
+\quad
+\begin{cases}
+i = 1, \ldots, I \\
+j = 1, \ldots, J \\
+k = 1, \ldots, n_{ij}
+\end{cases}$$
+
+
+```{r fig-quali-calories, fig.width=5, fig.height=3,  fig.cap="Calories brûlées selon le niveau d’expérience et le type de sport"}
+ggplot(data, aes(x = level, y = calories, fill = type)) +
+  geom_boxplot() +
+  labs(
+    title = "Calories brûlées selon level et type",
+    x = "level",
+    y = "calories",
+    fill = "type"
+  )
+```
+
+
+```{r}
+anova_cal <- aov(calories ~ level * type, data = data)
+summary(anova_cal)
+```
+
+La @fig-quali-calories montre une augmentation nette du nombre de calories brûlées avec le niveau
+d’expérience, quel que soit le type de sport pratiqué. L’ANOVA confirme un effet significatif du niveau
+$(p<2×10^{−16})$, tandis que l’effet du type de sport n’est pas significatif. De plus, l’interaction
+entre le niveau et le type de sport n’est pas significative, ce qui indique que l’influence du niveau sur les
+calories brûlées est similaire pour tous les types de sport.
+
+---
+
+### Sélection de modèle à l’aide du critère BIC
+
+Nous considérons un modèle complet incluant toutes les variables explicatives, correspondant à une **ANCOVA**.
+
+```{r}
+model_full <- lm(
+  calories ~ age + gender + weight + height + bpm_ave +
+    duration + fat + water + freq + bmi + type + level,
+  data = data
+)
+```
+
+```{r fig-bic-selection, fig.width=5, fig.height=4, fig.cap="Sélection des variables explicatives par le critère BIC."}
+regfit <- regsubsets(
+  calories ~ age + gender + weight + height + bpm_ave +
+    duration + fat + water + freq + bmi + type + level,
+  data = data,
+  nvmax = 15,
+  method = "exhaustive"
+)
+
+plot(regfit, scale = "bic")
+```
+
+La @fig-bic-selection illustre la sélection des variables explicatives par le critère BIC, qui privilégie des modèles
+parcimonieux. On observe que seules certaines variables sont retenues de manière stable, tandis que d’autres
+sont fréquemment exclues, ce qui traduit leur faible contribution explicative ou une redondance avec d’autres
+variables. Cette sélection permet de réduire la complexité du modèle tout en conservant une bonne qualité
+d’ajustement.
+
+```{r}
+model_bic <- lm(
+  calories ~ duration + bpm_ave + freq + weight + type + level,
+  data = data
+)
+```
+
+```{r fig-diagnostic-bic, fig.width=5, fig.height=3, fig.cap="Résidus en fonction des valeurs ajustées pour le modèle sélectionné par BIC."}
+plot(fitted(model_bic), resid(model_bic),
+     xlab = "Valeurs ajustées",
+     ylab = "Résidus")
+abline(h = 0, col = "red")
+```
+
+La @fig-diagnostic-bic montre que les résidus du modèle sélectionné par le BIC sont globalement centrés autour de zéro,
+sans structure marquée en fonction des valeurs ajustées. Cela indique que le modèle rend correctement compte
+de la tendance moyenne des données. Une légère dispersion croissante des résidus est néanmoins observable
+pour les grandes valeurs ajustées, suggérant une hétéroscédasticité modérée, mais acceptable dans le cadre de
+cette étude.

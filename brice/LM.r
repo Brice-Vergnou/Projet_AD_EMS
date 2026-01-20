@@ -2,6 +2,9 @@ library(corrplot)
 library(tidyverse)
 library(gridExtra)
 library(reshape2)
+library(leaps)
+
+# ECRITURE DU MODELE A FAIR
 
 # Stat descriptive
 
@@ -42,9 +45,6 @@ par(mfrow=c(2,2))
 plot(model2)
 par(mfrow=c(1,1))
 
-# good mais overfit faudra faire de la selection ( et puis y a bcp trop de parametres )
-
-
 # --------------------------------------
 
 ggplot(data, aes(x = level, y = calories, fill = type)) +
@@ -56,7 +56,7 @@ ggplot(data, aes(x = level, y = calories, fill = type)) +
     fill = "type"
   )
 
-par(mfrow=c(1,2))
+par(mfrow=c(2,1))
 
 interaction.plot(
   x.factor     = data$level,
@@ -100,3 +100,31 @@ summary(model_cat_inter)
 anova(model_cat_inter)
 
 # tjr pas significatif mais pas mal
+
+# --- Selection de modèle
+
+model_full <- lm(
+  calories ~ age + gender + weight + height + bpm_ave +
+    duration + fat + water + freq + bmi + type + level,
+  data = data
+)
+
+summary(model_full)
+
+regfit <- regsubsets(
+  calories ~ age + gender + weight + height + bpm_ave +
+    duration + fat + water + freq + bmi + type + level,
+  data = data,
+  nvmax = 15,
+  method = "exhaustive"
+)
+
+plot(regfit, scale = "bic",
+     main = "Sélection des variables par le critère BIC")
+
+plot(fitted(model_bic), resid(model_bic),
+     xlab = "Valeurs ajustées",
+     ylab = "Résidus",
+     main = "Résidus vs valeurs ajustées (modèle BIC)")
+abline(h = 0, col = "red")
+
