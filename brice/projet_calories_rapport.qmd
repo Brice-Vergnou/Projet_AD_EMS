@@ -1,25 +1,34 @@
 
 ---
 title: "Analyse du nombre de calories brûlées"
-author: "À compléter"
+author: "Ilias Bouhalla, Chaima Sghir, Brice Vergnou"
 format: 
   pdf:
     toc: true
     number-sections: true
 lang: fr
-fontsize: 11pt
-geometry: margin=2cm
+fontsize: 10pt
+geometry: margin=1.8cm
 ---
 
 ```{r setup, include=FALSE}
+
+
 knitr::opts_chunk$set(
-  echo    = FALSE,
-  message = FALSE,
-  warning = FALSE,
+  echo      = FALSE,
+  message   = FALSE,
+  warning   = FALSE,
   fig.align = "center",
-  fig.width = 5,
-  fig.height = 3.5
+  fig.width = 4.8,
+  fig.height = 2.8,
+  dpi       = 300
 )
+
+par(
+  cex = 0.8,
+  mar = c(4, 4, 1.5, 1)
+)
+
 library(corrplot)
 library(tidyverse)
 library(gridExtra)
@@ -28,7 +37,7 @@ library(reshape2)
 
 # Introduction
 
-Ce projet vise à analyser les facteurs qui influencent le nombre de calories brûlées lors d’une séance sportive. Après une exploration statistique du jeu de données, nous étudions l’impact des caractéristiques physiques, du type d’exercice et du niveau de difficulté sur la dépense énergétique. Plusieurs approches de modélisation sont mobilisées (ANOVA, ANCOVA, modèles linéaires), ainsi qu’une sélection de modèles afin d’identifier les variables les plus explicatives. L’objectif final est de proposer un modèle cohérent, interprétable et validé par une analyse rigoureuse des résidus et des diagnostics.
+Ce projet a pour objectif d’analyser les facteurs influençant la dépense énergétique lors de séances sportives à partir d’un jeu de données décrivant les caractéristiques physiques, physiologiques et les pratiques d’adhérents d’une salle de sport. Après une analyse descriptive et exploratoire du jeu de données, nous mobilisons des tests d’hypothèses, des méthodes de clustering et différentes approches de modélisation statistique afin d’étudier le nombre de calories brûlées et le niveau d’expérience des pratiquants. Une attention particulière est portée à la sélection de variables, à l’interprétation des modèles et à l’analyse des résidus, dans une logique d’aller-retour entre exploration et modélisation.
 
 ```{r data-import}
 data <- read.csv("../DataGym-projet4modIA-2526.csv", sep = " ")
@@ -100,7 +109,7 @@ La  @fig-cal-violin-combine permet de visualiser l’influence du type d’exerc
 
 Les distributions montrent que les calories brûlées varient fortement selon le type d’exercice et le niveau : les pratiquants de niveau élevé ainsi que certains types d’entraînement plus intenses présentent des valeurs médianes plus hautes. La dispersion importante à l’intérieur de chaque groupe suggère toutefois une forte variabilité individuelle. La fréquence d’entraînement apparaît également liée à un accroissement global des calories. Ces observations indiquent que les facteurs qualitatifs influencent bien la dépense énergétique, ce qui justifie de les intégrer dans les modèles explicatifs.
 
-```{r fig-cal-violin-combine, fig.cap="Calories brûlées selon le type d'exercice (à gauche) et le niveau (à droite).", fig.width=7, fig.height=3.5}
+```{r fig-cal-violin-combine, fig.cap="Calories brûlées selon le type d'exercice (à gauche) et le niveau (à droite).", fig.width=6, fig.height=3}
 g_cal_type <- ggplot(data, aes(x = type, y = calories, fill = type)) +
   geom_violin(trim = FALSE, alpha = 0.6) +
   geom_boxplot(width = 0.1, outlier.size = 0.8) +

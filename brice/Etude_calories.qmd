@@ -151,15 +151,17 @@ plot(regfit, scale = "bic")
 La @fig-bic-selection illustre la sélection des variables explicatives par le critère BIC, qui privilégie des modèles
 parcimonieux. On observe que seules certaines variables sont retenues de manière stable, tandis que d’autres
 sont fréquemment exclues, ce qui traduit leur faible contribution explicative ou une redondance avec d’autres
-variables. Cette sélection permet de réduire la complexité du modèle tout en conservant une bonne qualité
-d’ajustement.
+variables. Le meilleur modèle est $Y_i=\theta_0+\theta_1x_{\text{age},i}+\theta_2x_{\text{bpm\_vae},i}+\theta_3x_{\text{duration},i}+\beta 1_{\text{gender=male},i}+\varepsilon_i$.
 
 ```{r}
 model_bic <- lm(
-  calories ~ duration + bpm_ave + freq + weight + type + level,
+  calories ~ age+gender+bpm_ave+duration,
   data = data
 )
+anova(model_bic, model_full)
 ```
+
+Un test de sous modèle avec le modèle complet nous donne une p-valeur de 0.2, ce qui nous permet d'accepter le sous-modèle.
 
 ```{r fig-diagnostic-bic, fig.width=5, fig.height=3, fig.cap="Résidus en fonction des valeurs ajustées pour le modèle sélectionné par BIC."}
 plot(fitted(model_bic), resid(model_bic),
@@ -168,8 +170,6 @@ plot(fitted(model_bic), resid(model_bic),
 abline(h = 0, col = "red")
 ```
 
-La @fig-diagnostic-bic montre que les résidus du modèle sélectionné par le BIC sont globalement centrés autour de zéro,
-sans structure marquée en fonction des valeurs ajustées. Cela indique que le modèle rend correctement compte
-de la tendance moyenne des données. Une légère dispersion croissante des résidus est néanmoins observable
-pour les grandes valeurs ajustées, suggérant une hétéroscédasticité modérée, mais acceptable dans le cadre de
-cette étude.
+La @fig-diagnostic-bic montre que les résidus du modèle sélectionné par le BIC sont globalement centrés autour de zéro, ce qui indique une absence de biais.
+Cependant, une légère non-linéaruté apparaît dans la relation entre les résidus et les valeurs ajustées, avec une dispersion plus marquée pour les valeurs ajustées extrêmes.
+Cette forme suggère la présence d’une hétéroscédasticité modérée sans remettre en cause la pertinence globale du modèle dans le cadre de cette étude.
