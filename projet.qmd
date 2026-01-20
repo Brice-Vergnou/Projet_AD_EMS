@@ -190,81 +190,113 @@ grid.arrange(g2,g1,ncol=2, widths = c(2,3.6))
 ```
 
 ```{r}
-#| include: false
-qqnorm(gym[,7]) 
-#qqplot(gym[,7])
-shapiro.test(gym$calories[gym$gender == "Male"])
-shapiro.test(gym$calories[gym$gender == "Female"])
+
+#| echo: false     
+#| warning: false
+
+library(nortest)
+lillie.test(gym$calories)
+
+```
+
+On a commencé par faire un test de normalité de Kolmogorov-Smirnov (de Lilliefors) là on trouve une p-valeur de 0.0633 ce qui est limite eneffet on rejettera si on prend un test à niveau 5% on acceptera l'hypothèse hors pour un test à niveau 10% on rejettera l'hypothèse donc on a décidé de refaire un autre test de Shapiro-Wilk
+
+```{r}
+
+#| echo: false     
+#| warning: false
+
+
 shapiro.test(gym$calories)
 
 ```
 
------- On peut dire que la variable calorie suit une loi normale (APPARAMENT ON PEUT PAS RÉPONDRE À CETTE QUESTION POUR L'INSTANT CAR ON VA FAIRE LES TESTES DE NORMALITÉ EN JANVIER)
+Avec le test de Shapiro-Wilk on trouve une p-valeur de 2.982e-0.5 qui est trés faible donc en conclusion on a rejetté l'hypothèse
 
-Chat a donné cette proposition de syntaxe donc on voit que la p-valeur est trop basse pour les hommes et les femmes donc la variable calorie n'est pas normal ——-
-
-La p-valeur obtenue pour les hommes comme pour les femmes est très faible, ce qui indique que la variable *calories* ne suit pas une distribution normale dans les deux groupes
+La variable calories brûlées ne suit pas une loi normale
 
 ```{r}
-#| include: false
-#test_chi2_pour tester l'indépendance entre la variabe genre et calories (quali/quanti) donc on peut pas faire un test X2
-#tab<- table(gym$gender, gym$calories)
-#chisq.test(tab)
+
+#| label: test_wilcoxon
+#| echo: false     
+#| warning: false
 
 
-#t.test(calories ~ gender, data = gym) #test de student qui est élligible que si la variable calories suit une loi normal
+# Test de Wilcoxon-Mann-Whitney
+# H0 : Les distributions des calories sont identiques pour les hommes et les femmes
+# H1 : Il y a un décalage significatif entre les deux distributions (une est plus grande que l'autre)
 
-# Assurez-vous que gender est bien un facteur
-gym$gender <- as.factor(gym$gender)
-
-# ANCOVA corrigée
-# On retire weight et height car ils sont déjà contenus dans le bmi
-ancova <- aov(calories ~ bpm_ave + duration + fat + water + bmi + gender, data = gym)
-
-# Affichage des résultats
-summary(ancova)
+res_wilcox <- wilcox.test(calories ~ gender, data = gym)
+res_wilcox
 
 ```
 
-En réalisant une ANOVA à un facteur entre la variable *calories brûlées* et le *genre*, on obtient une p-valeur très faible. Cela indique que le nombre de calories brûlées varie significativement selon le genre
+Comme les tests de normalité de Shapiro-Wilk ont rejeté l'hypothèse de normalité pour la variable calories.
+
+Nous avons donc réalisé un test de Wilcoxon-Mann-Whitney (non-paramétrique).
+La p-valeur obtenue est 1.139e-05 qui est trés faible donc on rejette donc l'hypothèse nulle : il y a une différence significative de calories brûlées entre les hommes et les femmes.
 
 ```{r}
-#| include: false
+#| label: tests_Mann-Whitney
+#| echo: false     
+#| warning: false
+
 sub1 <- subset(gym, type =="Yoga" )
 sub2 <- subset(gym, type =="HIIT" )
 sub3 <- subset(gym, type =="Cardio" )
 sub4 <- subset(gym, type == "Strength")
 
-#test_anova_un_facteur_pour tester l'indépendance entre la variabe genre et calories pour le type de sport=Yoga 
-anova1 <- aov(calories ~ gender, data = sub1)
-summary(anova1)
-#test_anova_un_facteur_pour tester l'indépendance entre la variabe genre et calories pour le type de sport=HIIT
-anova2 <- aov(calories ~ gender, data = sub2)
-summary(anova2)
-#test_anova_un_facteur_pour tester l'indépendance entre la variabe genre et calories pour le type de sport=Cardio 
-anova3 <- aov(calories ~ gender, data = sub3)
-summary(anova3)
-#test_anova_un_facteur_pour tester l'indépendance entre la variabe genre et calories pour le type de sport=Strength
-anova4 <- aov(calories ~ gender, data = sub4)
-summary(anova4)
 
+res_wilcox1 <- wilcox.test(calories ~ gender, data = sub1)
+res_wilcox1
+
+res_wilcox2 <- wilcox.test(calories ~ gender, data = sub2)
+res_wilcox2
+
+res_wilcox3 <- wilcox.test(calories ~ gender, data = sub3)
+res_wilcox3
+
+res_wilcox4 <- wilcox.test(calories ~ gender, data = sub4)
+res_wilcox4
 ```
 
+Afin d'affiner l'analyse, nous avons appliqué le test de Wilcoxon-Mann-Whitney séparément pour chaque type de sport.
+Les résultats mettent en évidence une nuance importante :
+
+Pour le HIIT, le Cardio et le Strength, la p-valeur est inférieure au seuil de 5% . On rejette donc l'hypothèse nulle : pour ces activités intenses, le genre a un impact significatif sur la dépense calorique (les hommes brûlant généralement plus de calories que les femmes du fait de leur métabolisme et gabarit moyen supérieur).
+En revanche, pour le Yoga, la p-valeur est élevée 0.3946 . On ne peut donc pas rejeter l'hypothèse nulle. Cela suggère que pour cette pratique spécifique, la dépense calorique ne diffère pas significativement entre les hommes et les femmes dans notre échantillon.
+
+Cela montre que la conclusion générale ("le genre influence les calories") n'est pas absolue : elle dépend du type d'activité.
+
 ```{r}
-#| include: false
+#| label: tests_chi2
+#| echo: false     
+#| warning: false
+
 #test_chi2_pour tester l'indépendance entre la variabe genre et type
-tab5 <- table(gym$type, gym$gender)
-chisq.test(tab5)
-
-
+tab_type_gender <- table(gym$type, gym$gender)
+#print(tab_type_gender)
+res_chi2_type <- chisq.test(tab_type_gender)
+res_chi2_type
 ```
 
 ```{r}
-#| include: false
+#| label: tests_chi2_2
+#| echo: false     
+#| warning: false
+
 #test_chi2_pour tester l'indépendance entre la variabe genre et level 
 tab6 <- table(gym$level, gym$gender)
-chisq.test(tab6)
+#print(tab6)
+res_chi2_level <- chisq.test(tab6)
+res_chi2_level
 ```
+
+Nous avons réalisé des tests du Khi-deux d'indépendance pour vérifier si le genre influençait le choix du sport ou le niveau d'expérience.
+
+-   Concernant le lien **Type de sport / Genre**, la p-valeur obtenue est très élevée (**p = 0.7052**). Nous ne rejetons donc pas l'hypothèse nulle d'indépendance. Le choix de la discipline sportive ne dépend pas significativement du genre dans notre échantillon.
+
+-   De même pour le lien **Niveau / Genre**, la p-valeur est proche de 1 (**p = 0.9936**), ce qui confirme une absence totale de dépendance. La répartition des niveaux d'expérience (débutant, intermédiaire, expert) est statistiquement identique chez les hommes et les femmes.
 
 ```{r}
 #| label: logistic_model
@@ -279,7 +311,7 @@ summary(model_logit)
 ```
 
 ```{r}
-#| label: logistic_model
+#| label: logistic_model_2
 #| echo: true
 
 gym$freq <- NULL
