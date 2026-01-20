@@ -1,0 +1,132 @@
+---
+format: pdf
+editor: visual
+lang: fr
+crossref:
+  fig-title: Figure
+  fig-prefix: Figure
+---
+
+**Clustering des individus**
+
+Cette section vise à regroupés les individus de l'étude en groupes homogènes (clusters). L'analyse repose sur les variables quantitatives de notre jeu de données. Les variables qualitatives (gender, type, level, freq) ont été écartées de la construction des classes pour servir uniquement à l'interprétation a posteriori.
+
+Pour garantir une segmentation robuste, nous avons adopté une démarche croisée combinant deux algorithmes de classification sur les données préalablement centrées et réduites. Cette normalisation est cruciale pour que les variables à forte variance (comme les calories) ne dominent pas le calcul des distances par rapport aux variables à faible amplitude (comme la taille).
+
+Classification Ascendante Hiérarchique (CAH) : Utilisée en première approche avec la distance euclidienne et le critère de Ward. Ce critère minimise la perte d'inertie inter-classe à chaque étape de regroupement, favorisant des classes compactes. Elle nous permet aussi de visualiser la structure des données via un dendrogramme.
+
+K-Means : Utilisée pour consolider la partition. Cet algorithme itératif réalloue les individus pour minimiser l'inertie intra-classe totale.
+
+```{r}
+#| label: setup-cluster
+#| include: false
+#| echo: false
+library(FactoMineR)
+library(factoextra)
+library(gridExtra)
+library(reshape2)
+library(knitr)
+library(ggplot2)
+
+gym_data <- read.table("DataGym-projet4modIA-2526.csv", header = TRUE, sep = " ", comment.char = "")
+vars_exclues <- c("gender", "type", "level", "freq")
+df_quanti <- gym_data[, !names(gym_data) %in% vars_exclues]
+df_scaled <- scale(df_quanti)
+```
+
+Le choix du nombre de groupes $K$ repose sur la convergence de plusieurs critères statistiques : l'analyse du dendrogramme, la méthode du coude et le coefficient de silhouette.
+
+La @fig-metrics synthétise ces indicateurs. Le dendrogramme (partie supérieure) met en évidence une perte d'inertie très significative lors du passage de 3 à 2 classes, suggérant que la partition en 3 groupes est la plus naturelle. Cette observation est corroborée par les indicateurs des K-Means (partie inférieure) :
+
+Courbe d'inertie : On observe une cassure ("coude") à $K=3$, indiquant que l'ajout d'un quatrième groupe n'apporte pas de gain de compacité significatif.
+
+Silhouette moyenne : Le score atteint son maximum global pour $K=3$, confirmant que les individus sont, en moyenne, bien mieux classés dans une structure à trois classes.
+
+```{r}
+#| include: false
+dist_mat <- dist(df_scaled, method = "euclidean")
+res_cah <- hclust(dist_mat^2, method = "ward.D")
+clust_cah <- as.factor(cutree(res_cah, k = 3))
+
+p1 <- fviz_dend(res_cah, k = 3, show_labels = FALSE, rect = TRUE, 
+                main = "Dendrogramme (Ward)", ggtheme = theme_minimal())
+
+p2 <- fviz_nbclust(df_scaled, kmeans, method = "wss") + 
+  labs(title="Inertie Intra-classe", x="K", y="Inertie") + theme_minimal()
+
+p3 <- fviz_nbclust(df_scaled, kmeans, method = "silhouette") + 
+  labs(title="Silhouette Moyenne", x="K", y="Silhouette") + theme_minimal()
+```
+
+```{r}
+#| label: fig-metrics
+#| fig-cap: "**Critères de sélection du nombre de classes.** Haut : Dendrogramme de la CAH (Ward). Bas : Méthode du coude et Silhouette."
+#| fig-pos: "H"
+#| echo: false
+#| message: false
+#| warning: false
+grid.arrange(p1, arrangeGrob(p2, p3, ncol=2), nrow=2, heights=c(1.5, 1))
+```
+
+```{r}
+#| include: false
+#| echo: false
+set.seed(123)
+res_km <- kmeans(df_scaled, centers = 3, nstart = 25)
+clust_kmeans <- as.factor(res_km$cluster)
+```
+
+```{r}
+#| include: false
+#| echo: false
+round(mclust::adjustedRandIndex(clust_cah, clust_kmeans), 3)
+```
+
+Pour s'assurer que la partition est la plus adapté et ne soit pas significativement en fonction de l'algorithme choisi, nous avons comparé la partition issue de la CAH avec celle des K-Means à l'aide de l'Indice de Rand Ajusté (ARI). L'ARI obtenu est de 0.723. Cette valeur indique une concordance assez robuste entre les deux partitions : les méthodes identifient des structures sous-jacentes cohérentes. Nous retenons la partition K-Means pour la suite de l'analyse car elle optimise directement l'inertie intra-classe
+
+L'analyse des profils moyens par classe, illustrée en @fig-cluster-final,permet de donner une interprétation aux trois groupes identifiés. La @fig-cluster-final superpose la projection des individus sur le premier plan factoriel de l'ACP (à gauche) et les distributions des variables les plus discriminantes (à droite).
+
+Les trois clusters se distinguent nettement selon deux axes : la morphologie et l'intensité de l'entraînement.
+
+Cluster 1 : Les "Gabarits Imposants" Ce groupe se détache clairement par des variables anthropométriques élevées. Ils présentent les poids (weight), tailles (height) et indices de masse corporelle (bmi) les plus importants de l'échantillon. Le taux de graisse (fat) est également supérieur à la moyenne. Leurs séances sont d'intensité standard. Ce profil correspond probablement à des individus de forte corpulence, potentiellement en objectif de perte de poids ou de force athlétique.
+
+Cluster 2 : Les "Athlètes d'Endurance" Ce cluster est défini par la performance. Il regroupe les individus ayant les durées d'entraînement (duration) et les dépenses énergétiques (calories) les plus élevées, souvent très loin devant les autres groupes. Physiologiquement, ils se distinguent par le taux de graisse (fat) le plus faible. C'est le profil type des praticiens de sports d'endurance ou de haute intensité (HIIT, Cardio poussé).
+
+Cluster 3 : Les "Profils Fitness / Loisir" Ce groupe, souvent situé au centre du plan factoriel ou à l'opposé du cluster 1, rassemble des individus de gabarit plus léger (poids et taille faibles). Leur pratique sportive est modérée en termes de durée et d'intensité calorique, inférieure à celle du groupe 2. Leur taux de graisse est moyen, inférieur au groupe 1 mais supérieur aux athlètes du groupe 2. Il s'agit vraisemblablement d'une pratique d'entretien ou de fitness "santé".
+
+```{r}
+#| label: fig-cluster-final
+#| fig-cap: "**Caractérisation des clusters retenus (K=3).** Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
+#| echo: false
+#| message: false
+#| warning: false
+
+
+
+# ACP pour visualisation
+res_pca <- PCA(df_scaled, graph = FALSE)
+p_pca <- fviz_pca_ind(res_pca, geom = "point", habillage = clust_kmeans, 
+             addEllipses = TRUE,  
+             legend.title = "Cluster", title = "Espace des individus (ACP)",
+             label = "none", ggtheme = theme_minimal()) +
+             theme(legend.position = "none")
+
+# Préparation des données pour Boxplots compacts
+df_plot <- data.frame(scale(df_quanti), Cluster = clust_kmeans)
+df_long <- melt(df_plot, id.vars = "Cluster")
+vars_focus <- c("weight", "duration", "calories", "fat", "bmi", "height")
+df_long_filt <- subset(df_long, variable %in% vars_focus)
+
+# Création des Boxplots
+p_box <- ggplot(df_long_filt, aes(x = Cluster, y = value, fill = Cluster)) +
+  geom_boxplot(outlier.size = 0.5, alpha = 0.8) +
+  facet_wrap(~variable, scales = "free_y", ncol = 3) +
+  theme_minimal() +
+  labs(y = "Z-score (écart-type)", title = "Profils sportifs") +
+  theme(legend.position = "right", 
+        axis.text.x = element_blank(),
+        strip.text = element_text(size=9, face="bold"),
+        axis.title.y = element_text(size=9))
+
+grid.arrange(p_pca, p_box, ncol = 2, widths = c(1, 1.4))
+```
