@@ -1,0 +1,171 @@
+---
+format: pdf
+editor: visual
+---
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+
+library(ggplot2)
+library(FactoMineR)
+library(factoextra)
+library(reticulate)
+library(ggpubr)
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+gym_data <- read.table("DataGym-projet4modIA-2526.csv", header = TRUE, sep = " ", comment.char = "")
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+tab <- table(gym_data$gender, gym_data$type)
+test <- chisq.test(tab)
+test
+```
+
+Afin de légitimer la projection des individus dans un espace factoriel réduit, il convient préalablement de vérifier l'existence de liaisons statistiques entre les variables qualitatives. Nous avons pour cela réalisé des tests du Chi-carré d'indépendance de Pearson dont les p-valeurs sont reportées dans le **@tbl-chi2-pearson**.
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+cols <- c("gender", "type", "freq", "level")
+gym_data[cols] <- lapply(gym_data[cols], as.factor)
+
+pval_matrix <- matrix(NA, nrow=4, ncol=4, dimnames=list(cols, cols))
+
+for(i in cols){
+  for(j in cols){
+    pval_matrix[i, j] <- chisq.test(table(gym_data[,i], gym_data[,j]))$p.value
+  }
+}
+```
+
+```{r}
+#| label: tbl-chi2-pearson
+#| tbl-cap: "Test du CHi2 de Pearson croisés"
+#| echo: false
+
+library(knitr)
+kable(round(pval_matrix, 5))
+```
+
+Au seuil de signification $\alpha = 5\%$, l'hypothèse d'indépendance ne peut être rejetée pour les croisements impliquant la variable Genre (croisée avec Type, Fréquence et Niveau), ainsi que pour le couple Type-Fréquence. Ces résultats confirment les statistiques descriptives : le genre n'est pas un facteur discriminant et n'influence ni la pratique ni la performance. En revanche, une dépendance significative est mise en évidence entre le Niveau et la Fréquence (rejet de l'hypothèse d'indépendance), validant la pertinence d'une analyse factorielle ciblée sur cette interaction.
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+knitr::kable(gym_data,align='c')
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+gym_data_qual = table(gym_data[ , c("gender", "type")])
+gym_data_qual
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+resCA<-CA(gym_data_qual,graph=T) 
+resCA$eig
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+
+vals <- as.vector(resCA$col$coord)
+labs <- rownames(resCA$col$coord)
+cols <- c("pink", "lightblue") 
+
+plot(vals, rep(0, length(vals)), 
+     pch = 19, cex = 2, col = cols,
+     xlim = c(min(vals)*1.5, max(vals)*1.5), ylim = c(-0.5, 0.5),
+     yaxt = "n", ylab = "", xlab = "Dimension 1 (Contribution)", bty="n",
+     main = "Position des genres sur l'Axe 1")
+
+abline(h = 0, lwd = 2)
+text(vals, rep(0.1, length(vals)), labels = labs, col = cols, font = 2)
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+tab_fl <- table(gym_data$freq, gym_data$level)
+mosaicplot(tab_fl, shade = TRUE, main = "Lien entre Fréquence et Niveau", las = 1)
+resCA_fl <- CA(tab_fl, graph = FALSE)
+resCA_fl$eig
+resCA_fl$col$coord
+```
+
+```{r}
+#| label: fig-freq-level
+#| fig-cap: "Projection des différentes modalités Level et Freq sur le premier plan factorielle "
+#| echo: false
+
+fviz_ca_biplot(resCA_fl, repel = TRUE, title = "CA : Alignement Freq - Level")
+
+```
+
+L’analyse dimensionnelle (voir **@fig-freq-level**) révèle une structure expliquant la totalité de l’information (100 %), dominée à 68 % par un premier axe traduisant l’intensité de la pratique. Cet axe horizontal ordonne les individus selon une progression linéaire, opposant les valeurs faibles à gauche aux valeurs fortes à droite, tandis que le second axe (32 %) discrimine les profils selon leur degré de modération (opposition extrême/moyen). L’étude des proximités confirme une corrélation directe et quasi parfaite : les débutants (Niveau 1) sont fortement associés aux fréquences faibles (2), alors que les niveaux experts (3) se regroupent avec les fréquences d'entraînement les plus élevées (5). Mathématiquement, ces résultats démontrent que la fréquence d'entraînement est le déterminant principal du niveau de compétence.
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+
+fviz_cos2(resCA_fl, choice = "row", axes = 1:2)
+fviz_cos2(resCA_fl, choice = "col", axes = 1:2)
+
+fviz_contrib(resCA_fl, choice = "row", axes = 1)
+fviz_contrib(resCA_fl, choice = "col", axes = 1)
+
+fviz_contrib(resCA_fl, choice = "row", axes = 2)
+fviz_contrib(resCA_fl, choice = "col", axes = 2)
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+cols <- c("gender", "type", "freq", "level")
+gym_data[cols] <- lapply(gym_data[cols], as.factor)
+
+resMCA <- MCA(gym_data[, cols], graph = FALSE)
+resMCA$eig
+
+fviz_cos2(resMCA, choice = "var", axes = 1:2)
+
+fviz_contrib(resMCA, choice = "var", axes = 1, top = 10)
+fviz_contrib(resMCA, choice = "var", axes = 2, top = 10)
+```
+
+```{r}
+#| label: fig-mca-var
+#| fig-cap: "Projection des différentes modalités sur le premier plan factorielle "
+#| echo: false
+
+fviz_mca_var(resMCA, repel = TRUE, col.var = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
+
+```
+
+Une Analyse des Correspondances Multiples a été réalisée sur l'ensemble des quatre variables qualitatives afin d'identifier la structure globale des données. La projection graphique (**@fig-mca-var**) met en évidence une forte hiérarchie dans les contributions : les variables de niveau et de fréquence, projetées loin de l'origine, captent la majeure partie de l'inertie et structurent exclusivement les axes factoriels.
+
+À l'inverse, les modalités liées au genre et au type de sport se concentrent autour du centre de gravité du nuage. Cette proximité avec l'origine indique une contribution marginale à la dispersion globale. Cette configuration confirme visuellement les résultats des tests statistiques précédents : la différenciation des individus ne repose pas sur leurs caractéristiques socio-démographiques ou leurs préférences d'activité, mais est structurée quasi-exclusivement par leur dynamique d'entraînement (couple Fréquence-Niveau).
+```         
+```
