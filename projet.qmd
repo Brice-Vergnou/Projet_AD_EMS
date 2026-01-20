@@ -289,11 +289,18 @@ res_chi2_level <- chisq.test(tab6)
 res_chi2_level
 ```
 
+
+
+
 Nous avons réalisé des tests du Khi-deux d'indépendance pour vérifier si le genre influençait le choix du sport ou le niveau d'expérience.
 
 -   Concernant le lien **Type de sport / Genre**, la p-valeur obtenue est très élevée (**p = 0.7052**). Nous ne rejetons donc pas l'hypothèse nulle d'indépendance. Le choix de la discipline sportive ne dépend pas significativement du genre dans notre échantillon.
 
 -   De même pour le lien **Niveau / Genre**, la p-valeur est proche de 1 (**p = 0.9936**), ce qui confirme une absence totale de dépendance. La répartition des niveaux d'expérience (débutant, intermédiaire, expert) est statistiquement identique chez les hommes et les femmes.
+
+------------------------------------------------------------------------
+
+On cherche à modéliser les $Y_i$ désignant si l'individu est de niveau 1 ou de niveau 2 ou 3 en fonction des autres variables. La variable que l'on cherche à expliquer étant binaire et iid, on utilise un modèle logistique. On a donc $Y_i \sim B(\pi_\theta(x_i))$ avec $logit(\pi)=\ln(\frac{pi}{1-\pi})=<X,\theta>$.
 
 ```{r}
 #| label: logistic_model
@@ -303,9 +310,12 @@ gym$levelBis <- ifelse(gym$level > 1, 1, 0)
 gym$level <- NULL
 
 gym$levelBis <- as.factor(gym$levelBis)
+
 model_logit <- glm(levelBis ~ ., data = gym, family = binomial(link = "logit"))
 summary(model_logit)
 ```
+
+En regardant les p-valeurs, on constate qu'aucune des variables n'est significative, ce qui est étrange car l'analyse descriptive montre que beaucoup de variables sont liées entre elles. En regardant de plus près, on constate que l'estimation et l'écart-type des fréquences est très important par rapport aux autres variables. Nous allons donc faire un modèle sans cette variable.
 
 ```{r}
 #| label: logistic_model_2
@@ -314,9 +324,19 @@ summary(model_logit)
 gym$freq <- NULL
 model_logit1<- glm(levelBis ~ ., data = gym, family = binomial(link = "logit"))
 summary(model_logit1)
-
 ```
+
+On voit que les p-valeurs sont plus cohérentes car nous avons certaines variables qui sont explicatives et d'autres non. Pour faire le tri dans ces variables, nous allons procéder à une sélection de modèle par critère AIC.
 
 ```{r}
 choix=stepAIC(model_logit1,k=log(nrow(gym)),direction="backward")
 ```
+
+Cette procédure nous donne le modèle $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$. 
+
+```{r}
+model.aic <- glm(levelBis ~ fat + duration, data = gym, family = binomial(link = "logit"))
+anova(model.aic,model_logit1)
+```
+
+En réalisant un test de sous-modèle entre le résultat du choix par AIC et le modèle complet privé de `level`, on obtient une p-valeur de 0.2365, ce qui nous permet d'accepter le sous-modèle.
