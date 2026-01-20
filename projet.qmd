@@ -1,8 +1,27 @@
 ---
 title: "Projet_AD_EMS"
-format: html
+format: pdf
 editor: visual
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=TRUE,
+	             cache=FALSE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE,
+               class.source="badCode")
+opts_knit$set(width=75)
+```
 
 ## Quarto
 
@@ -22,6 +41,7 @@ When you click the **Render** button a document will be generated that includes 
 ```{r}
 #| warning: false
 #| message: false
+#| include: false
 
 library(ggplot2)
 library(gridExtra)
@@ -31,73 +51,146 @@ library(factoextra)
 library(corrplot)
 library(reticulate)
 
+library(bestglm)
+library(ggfortify)
+library(ggplot2)
+library(VGAM)
+library(pROC)
+library(MASS)
+
 ```
 
 ```{r}
-#| eval: false 
+#| label: summary_table
+#| tbl-cap: "FAIS LE"
+#| echo: false
+#| fig-height: 4
+#| fig-width: 4
 gym<-read.csv("DataGym-projet4modIA-2526.csv" , sep=" ")
 gym$gender=as.factor(gym$gender)
 gym$type=as.factor(gym$type)
-gym$freq=as.factor(gym$freq)
+gym$freq=as.factor(gym$freq) #pour avoir le graphe mais cette ligne en commentaire run le code et rends le comme il était parceque on teste on bas est ce que il est mieux de considérer la variable fréquence comme qualitative ou pas 
 summary(gym)
 
 ```
 
-You can add options to executable code like this
+Il est essentiel de normaliser les données, car les variables n’ont pas la même échelle. Par exemple, la variable *calories* varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles. Sans normalisation, la variable *calories* prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données
 
 ```{r}
-respca<-PCA(gym,scale.unit=T ,graph=F , quali.sup=c(2,8))
+#| label: summary_table2
+#| tbl-cap: "FAIS LE"
+#| echo: false
+respca<-PCA(gym,scale.unit=T ,graph=F , quali.sup=c(2,8,11,12))
 respca$eig
 sum(respca$eig[,1])
+
+
+```
+
+```{r}
+#| label: summary_table1
+#| fig-cap: "FAIS LE"
+#| echo: false
 fviz_eig(respca)
+
 ```
 
----- On remarque bien l'importance de de réduire (sinon les variablees calories domaine sur l'axe et on aura pas une bonne analyse de donnée) ici on note qu'on peut trés bien que garder les 5 premieres variables car c'est là ou les variance expliquées couvrent 86% de l'informations —-
+On constate qu’il est possible de conserver uniquement les quatre premières dimensions, car à elles seules, elles expliquent 79,10 % de la variabilité totale des données. Cela signifie qu’elles suffisent à représenter l’essentiel de l’information contenue dans le jeu de données
 
 ```{r}
+#| label: summary_table3
+#| fig-cap: "FAIS LE"
+#| echo: false
 respca$var$cos2 
-respca$var$contrib
+#respca$var$contrib
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+L'analyse de la **qualité de représentation des variables** (basée sur le critère du **cos²**) sur les cinq dimensions retenues met en évidence la structure suivante :
+
+-   La **1ère dimension** est principalement caractérisée par les variables *fat*, *calories*, *duration* et *water*, qui y sont le mieux représentées.
+
+-   La **2ème dimension** est dominée par les variables de corpulence (*weight* et *bmi*).
+
+-   La **3ème dimension** est essentiellement structurée par la variable *height*.
+
+-   Enfin, alors que la **4ème dimension** ne semble capturer aucune contribution significative de la part des variables, l'**âge** et la **fréquence cardiaque moyenne** (*bpm_ave*) sont les variables les plus corrélées à la **5ème dimension**.
 
 ```{r}
-respca$var$coord
-respca$ind$coord
+#| label: summary_table4
+#| echo: false
+#| fig-cap: FAIS LE 4
+#| fig-height: 2.5
+#| fig-width: 5
 
-fviz_pca_ind(respca)
 
-fviz_pca_ind(respca,
+fviz_pca_ind(respca,geom="point")
+
+```
+
+Le graphique n’est pas très lisible et ne permet pas d’interpréter de nombreux éléments en détail. On observe néanmoins la formation de quelques groupes, même si les caractéristiques précises expliquant ces regroupements restent difficiles à identifier.
+
+En colorant les individus selon le genre, le type ou la fréquence, certaines tendances apparaissent.
+
+```{r}
+#| label: fig-pca-groupes
+#| echo: false
+#| warning: false
+#| layout-ncol: 3
+#| fig-cap: "Analyse des individus selon le Genre et la Fréquence"
+#| fig-subcap: 
+#|   - "Projection selon le Genre"
+#|   - "Projection selon la Fréquence"
+#|   - "Projection selon le Type"
+#| fig-height: 8
+#| fig-width: 8
+
+g3<-fviz_pca_ind(respca,
              habillage = gym$gender,   # variable qualitative pour colorier
-             legend.title = "Gender")
+             legend.title = "Gender",geom="point")
+g3
+
+  
+g1<-fviz_pca_ind(respca,
+             habillage = gym$freq,   # variable qualitative pour colorier
+             legend.title = "Fréquence",geom="point",repel = T)
+g1
+
 
 fviz_pca_ind(respca,
              habillage = gym$type,   # variable qualitative pour colorier
-             legend.title = "Type")
-fviz_pca_ind(respca,
-             habillage = gym$freq,   # variable qualitative pour colorier
-             legend.title = "Fréquence")
+             legend.title = "Type",geom="point")
+```
 
+Concernant le genre, une distinction est visible principalement sur l’axe 2 : les hommes se situent davantage du côté associé à des valeurs plus élevées de poids, taille et IMC, contrairement aux femmes.
+
+En revanche, aucune tendance claire ne se dégage concernant le type, les individus étant répartis de manière trop homogène.
+
+Pour la fréquence, on observe qu’elle influence surtout l’axe 1 : plus on se déplace vers la droite, plus la fréquence augmente. Cela est cohérent avec le cercle de corrélation, où l’axe 1 est associé à un nombre plus élevé de calories brûlées et à une présence plus régulière en salle, ce qui reflète logiquement une fréquence d’entraînement plus importante
+
+```{r}
+#| label: summary_table8
+#| echo: false
+#| warning: false
+#| fig-cap: FAIS LE 8
+#| fig-height: 3.5
+#| fig-width: 3.5
+g2<-fviz_pca_var(respca, repel=T)
+g2
+```
+
+Dans le cercle de corrélation, on observe que les variables *fat* d’une part, et *calories*, *duration*, etc. d’autre part, contribuent toutes à la formation de la première dimension, mais dans des directions opposées, ce qui est cohérent avec leur relation inverse.
+
+Par ailleurs, les variables *poids*, *la consommation d’eau* et *taille* influencent principalement la construction du deuxième axe factoriel
+
+```{r}
+#| include: false
+grid.arrange(g2,g3,ncol=2, widths = c(2,3.6))
+grid.arrange(g2,g1,ncol=2, widths = c(2,3.6))
 
 ```
 
------ On peut pas lire grande chose la dessus par contre on a quand meme des cluster qui se crée mais on va pas trop les caractéristiques derriere cette répartition—–
-
------- on a colorié les points en par gendre , type et freq , ce qu'on tire c'est que il ya une distinction sur l'axe 2 ou on trouve que les hommes ont plus de poids,taille,bmi... par rapport au femme.
-
-On peut rien savoir par rapport au type il sont tous mélangé
-
-On remarque que la freq dirige l'axe 1 plus qu'on avance vers la droite plus les fréquence augmente et ce qui est logique puisque dans notre cerle de corrélation plus on avance vers le droite plus on a un grand nombre de calories brulées et de période dans la salle ce qui est expliqué par une fréquence importante dans le gym——
-
 ```{r}
-fviz_pca_var(respca, repel=T)
-```
-
-,------- pour le cercle de corrélation , on voit que (fat) et (calories,duration ....) manipulent la 1er dimension mais il sont chacune directionne l'axe 1 inversement ce qui est bien logique
-
-Les variables poids , rétension d'eau ,taille directionne le 2eme axe factoriel ———
-
-```{r}
+#| include: false
 qqnorm(gym[,7]) 
 #qqplot(gym[,7])
 shapiro.test(gym$calories[gym$gender == "Male"])
@@ -110,22 +203,33 @@ shapiro.test(gym$calories)
 
 Chat a donné cette proposition de syntaxe donc on voit que la p-valeur est trop basse pour les hommes et les femmes donc la variable calorie n'est pas normal ——-
 
+La p-valeur obtenue pour les hommes comme pour les femmes est très faible, ce qui indique que la variable *calories* ne suit pas une distribution normale dans les deux groupes
+
 ```{r}
+#| include: false
 #test_chi2_pour tester l'indépendance entre la variabe genre et calories (quali/quanti) donc on peut pas faire un test X2
 #tab<- table(gym$gender, gym$calories)
 #chisq.test(tab)
 
 
-t.test(calories ~ gender, data = gym) #test de student qui est élligible que si la variable calories suit une loi normal
+#t.test(calories ~ gender, data = gym) #test de student qui est élligible que si la variable calories suit une loi normal
 
-anova <- aov(calories ~ gender, data = gym)
-summary(ano)
+# Assurez-vous que gender est bien un facteur
+gym$gender <- as.factor(gym$gender)
+
+# ANCOVA corrigée
+# On retire weight et height car ils sont déjà contenus dans le bmi
+ancova <- aov(calories ~ bpm_ave + duration + fat + water + bmi + gender, data = gym)
+
+# Affichage des résultats
+summary(ancova)
 
 ```
 
------- en faisant une anova 1 facteur entre la variable "calories bruéulé" et celle de "gendre" on trouve bien que la p-valeur est trés basse donc le nombre de calories dépend du genre ——
+En réalisant une ANOVA à un facteur entre la variable *calories brûlées* et le *genre*, on obtient une p-valeur très faible. Cela indique que le nombre de calories brûlées varie significativement selon le genre
 
 ```{r}
+#| include: false
 sub1 <- subset(gym, type =="Yoga" )
 sub2 <- subset(gym, type =="HIIT" )
 sub3 <- subset(gym, type =="Cardio" )
@@ -147,14 +251,43 @@ summary(anova4)
 ```
 
 ```{r}
+#| include: false
 #test_chi2_pour tester l'indépendance entre la variabe genre et type
 tab5 <- table(gym$type, gym$gender)
 chisq.test(tab5)
 
+
 ```
 
 ```{r}
+#| include: false
 #test_chi2_pour tester l'indépendance entre la variabe genre et level 
 tab6 <- table(gym$level, gym$gender)
 chisq.test(tab6)
+```
+
+```{r}
+#| label: logistic_model
+#| echo: true
+
+gym$levelBis <- ifelse(gym$level > 1, 1, 0)
+gym$level <- NULL
+
+gym$levelBis <- as.factor(gym$levelBis)
+model_logit <- glm(levelBis ~ ., data = gym, family = binomial(link = "logit"))
+summary(model_logit)
+```
+
+```{r}
+#| label: logistic_model
+#| echo: true
+
+gym$freq <- NULL
+model_logit1<- glm(levelBis ~ ., data = gym, family = binomial(link = "logit"))
+summary(model_logit1)
+
+```
+
+```{r}
+choix=stepAIC(model_logit1,k=log(nrow(gym)),direction="backward")
 ```
