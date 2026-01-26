@@ -172,8 +172,6 @@ corrplot(M, method = "ellipse", order = "hclust")
 Afin d'explorer la structure globale du jeu de données et d'identifier d'éventuels profils types parmi les individus, nous réalisons une Analyse en Composantes Principales (ACP). Cette méthode nous permet de réduire la dimensionnalité des variables quantitatives tout en conservant le maximum d'information.
 
 ```{r}
-#| label: summary_table
-#| tbl-cap: "Résumé statistique des variables du jeu de données Gym"
 #| echo: false
 #| fig-height: 4
 #| fig-width: 4
@@ -185,37 +183,36 @@ summary(gym)
 
 ```
 
-En affichant @summary_table , on remarque qu'il est essentiel de normaliser les données, car les variables n’ont pas la même échelle. Par exemple, la variable calories varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles. Sans normalisation, la variable calories prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données
+On remarque qu'il est essentiel de normaliser les données, car les variables n’ont pas la même échelle. Par exemple, la variable calories varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles. Sans normalisation, la variable calories prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données
 
 
 ```{r}
-#| label: summary_table2
-#| tbl-cap: "Valeurs propres et pourcentages d'inertie expliquée par les axes"
 #| echo: false
 respca<-PCA(gym,scale.unit=T ,graph=F , quali.sup=c(2,8,11,12))
 # respca$eig
 # sum(respca$eig[,1])
 ```
-Choix du nombre de dimensions (Éboulis des valeurs propres) : La première étape de l'ACP consiste à déterminer combien d'axes factoriels sont nécessaires pour résumer l'information. Nous analysons l'éboulis des valeurs propres pour identifier le nombre de dimensions qui capturent la majorité de l'inertie (variance) du nuage de données, tout en éliminant le "bruit" statistique.
-```{r}
-#| label: summary_table1
-#| fig-cap: "Éboulis des valeurs propres : choix du nombre de dimensions"
+
+La première étape de l'ACP consiste à déterminer combien d'axes factoriels sont nécessaires pour résumer l'information. Nous analysons l'éboulis des valeurs propres pour identifier le nombre de dimensions qui capturent la majorité de l'inertie du nuage de données, tout en éliminant le "bruit" statistique.
+
+```{r fig-screeplot, fig.cap="Pourcentage de variance expliquée par dimension"}
 #| echo: false
 fviz_eig(respca)
-
 ```
-On constate d'aprés @summary_table1 qu’il est possible de conserver uniquement les cinq premières dimensions, car à elles seules, elles expliquent 89.19 % de la variabilité totale des données. Cela signifie qu’elles suffisent à représenter l’essentiel de l’information contenue dans le jeu de données
 
-Qualité de représentation des variables : Une fois les axes retenus, nous devons comprendre leur signification. Pour cela, nous examinons la qualité de représentation (Cos²) des variables initiales sur chaque dimension. Une variable fortement représentée sur un axe contribue majoritairement à sa définition
+On constate d'aprés la @fig-screeplot qu’il est possible de conserver uniquement les cinq premières dimensions, car à elles seules, elles expliquent 89.19 % de la variabilité totale des données. Cela signifie qu’elles suffisent à représenter l’essentiel de l’information contenue dans le jeu de données
+
+Une fois les axes retenus, nous devons comprendre leur signification. Pour cela, nous examinons la qualité de représentation (Cos²) des variables initiales sur chaque dimension. Une variable fortement représentée sur un axe contribue majoritairement à sa définition
+
+
 ```{r}
-#| label: summary_table3
-#| fig-cap: "ualité de représentation (Cos²) des variables sur les 5 premiers axes"
 #| echo: false
 respca$var$cos2 
 #respca$var$contrib
 ```
 
-L'analyse de la **qualité de représentation des variables** (basée sur le critère du **cos²**) sur les cinq dimensions retenues @summary_table3 met en évidence la structure suivante :
+L'analyse de la **qualité de représentation des variables** (basée sur le critère du **cos²**) sur les cinq dimensions retenues.
+Cela met en évidence la structure suivante :
 
 -   La **1ère dimension** est principalement caractérisée par les variables *fat*, *calories*, *duration* et *water*, qui y sont le mieux représentées.
 
@@ -225,9 +222,10 @@ L'analyse de la **qualité de représentation des variables** (basée sur le cri
 
 -   Enfin, alors que la **4ème dimension** ne semble capturer aucune contribution significative de la part des variables, l'**âge** et la **fréquence cardiaque moyenne** (*bpm_ave*) sont les variables les plus corrélées à la **5ème dimension**.
 
-Structure globale de la population (Nuage des individus) : Nous projetons les individus dans le nouvel espace réduit défini par les deux premières composantes principales. Cette vue d'ensemble permet de repérer la topologie générale des données
+Nous projetons les individus dans le nouvel espace réduit défini par les deux premières composantes principales. Cette vue d'ensemble permet de repérer la topologie générale des données
+
 ```{r}
-#| label: summary_table4
+#| label: fig-projection
 #| echo: false
 #| fig-cap: "Projection des individus sur le premier plan factoriel (Dim 1 et 2)"
 #| fig-height: 2.5
@@ -238,7 +236,7 @@ fviz_pca_ind(respca,geom="point")
 
 ```
 
-Le graphique n’est pas très lisible et ne permet pas d’interpréter de nombreux éléments en détail. On observe néanmoins la formation de quelques groupes, même si les caractéristiques précises expliquant ces regroupements restent difficiles à identifier.
+La @fig-projection n’est pas très lisible et ne permet pas d’interpréter de nombreux éléments en détail. On observe néanmoins la formation de quelques groupes, même si les caractéristiques précises expliquant ces regroupements restent difficiles à identifier.
 
 En colorant les individus selon le genre, le type ou la fréquence, certaines tendances apparaissent.
 
@@ -272,15 +270,16 @@ fviz_pca_ind(respca,
              legend.title = "Type",geom="point")
 ```
 
-Concernant le genre, une distinction est visible principalement sur l’axe 2 : les hommes se situent davantage du côté associé à des valeurs plus élevées de poids, taille et IMC, contrairement aux femmes.
+Concernant le genre, une distinction est visible principalement sur l’axe 2 de la @fig-pca-groupes : les hommes se situent davantage du côté associé à des valeurs plus élevées de poids, taille et IMC, contrairement aux femmes.
 
 En revanche, aucune tendance claire ne se dégage concernant le type, les individus étant répartis de manière trop homogène.
 
 Pour la fréquence, on observe qu’elle influence surtout l’axe 1 : plus on se déplace vers la droite, plus la fréquence augmente. Cela est cohérent avec le cercle de corrélation, où l’axe 1 est associé à un nombre plus élevé de calories brûlées et à une présence plus régulière en salle, ce qui reflète logiquement une fréquence d’entraînement plus importante
 
-Visualisation des relations entre variables (Cercle des corrélations) : Le cercle des corrélations projette les vecteurs des variables quantitatives sur le premier plan factoriel
+Le cercle des corrélations projette les vecteurs des variables quantitatives sur le premier plan factoriel
+
 ```{r}
-#| label: summary_table8
+#| label: fig-cercle-correlation
 #| echo: false
 #| warning: false
 #| fig-cap: "Projection des variables sur le cercle des coreélation"
@@ -297,7 +296,7 @@ grid.arrange(g2,g3,ncol=2, widths = c(2,3.6))
 grid.arrange(g2,g1,ncol=2, widths = c(2,3.6))
 ```
 
-Dans le cercle de corrélation, on observe que les variables *fat* d’une part, et *calories*, *duration*, etc. d’autre part, contribuent toutes à la formation de la première dimension, mais dans des directions opposées, ce qui est cohérent avec leur relation inverse.
+Dans le cercle de corrélation (@fig-cercle-correlation), on observe que les variables *fat* d’une part, et *calories*, *duration*, etc. d’autre part, contribuent toutes à la formation de la première dimension, mais dans des directions opposées, ce qui est cohérent avec leur relation inverse.
 
 Par ailleurs, les variables *poids*, *la consommation d’eau* et *taille* influencent principalement la construction du deuxième axe factoriel
 
@@ -571,7 +570,7 @@ res_chi2_level
 
 # Clustering des individus
 
-Cette section vise à regrouper les individus de l'étude en groupes homogènes (clusters). L'analyse repose sur les variables quantitatives de notre jeu de données. Les variables qualitatives (gender, type, level, freq) ont été écartées de la construction des classes.
+Cette section vise à regroupés les individus de l'étude en groupes homogènes (clusters). L'analyse repose sur les variables quantitatives de notre jeu de données. Les variables qualitatives (gender, type, level, freq) ont été écartées de la construction des classes.
 
 Pour garantir une segmentation robuste, nous avons exploré plusieurs algorithmes de classification sur les données préalablement centrées et réduites. Cette normalisation est cruciale pour que les variables à forte variance (comme les calories) ne dominent pas le calcul des distances par rapport aux variables à faible amplitude (comme la taille).
 
@@ -580,6 +579,17 @@ Classification Ascendante Hiérarchique (CAH) : Utilisée en première approche 
 K-Means : Cet algorithme itératif réalloue les individus pour minimiser l'inertie intra-classe totale.
 
 Mélanges gaussiens : Approche probabiliste modélisant les données par une superposition de lois normales. Elle permet de s'adapter à des formes et volumes de classes variés (via la covariance) et d'estimer une probabilité d'appartenance pour chaque individu.
+
+```{r}
+#| label: setup-cluster
+#| include: false
+#| echo: false
+
+gym_data <- read.table("DataGym-projet4modIA-2526.csv", header = TRUE, sep = " ", comment.char = "")
+vars_exclues <- c("gender", "type", "level", "freq")
+df_quanti <- gym_data[, !names(gym_data) %in% vars_exclues]
+df_scaled <- scale(df_quanti)
+```
 
 ## K-means
 
@@ -593,7 +603,7 @@ Silhouette moyenne : Le score atteint son maximum global pour $K=3$ sur la @fig-
 #| label: fig-coude_silhouette
 #| fig-cap: "Méthode du coude et Silhouette"
 #| echo: false
-
+#| fig-height: 3
 p3 <- fviz_nbclust(df_scaled, kmeans, method = "wss") + 
   labs(title="Inertie Intra-classe", x="Nbr de classes", y="Inertie") + theme_minimal()
 
@@ -617,7 +627,7 @@ clust_kmeans <- as.factor(res_km$cluster)
 
 Une seconde approche explorée est celle d'un modèle de classification emboîté (CAH). Cette méthode a été privilégiée pour sa capacité à révéler l'architecture structurelle des données sans imposer de nombre de classes a priori. Le choix du nombre de groupes $K$ repose sur plusieurs critères : l'analyse du dendrogramme et le critère de Calinski-Harabasz.
 
-La @fig-metrics synthétise ces indicateurs. Le dendrogramme met en évidence une perte d'inertie très significative lors du passage de 3 à 2 classes, suggérant que la partition en 3 groupes est la plus naturelle. Cette observation est corroborée par les indicateurs de Calinski-Harabasz, on observe un maximum du critère à 3 classes.
+La @fig-metrics synthétise ces indicateurs. Le dendrogramme met en évidence une perte d'inertie très significative lors du passage de 3 à 2 classes, suggérant que la partition en 3 groupes est la plus naturelle. Cette observation est corroborée par l'indicateur de Calinski-Harabasz, on observe un maximum du critère à 3 classes.
 
 ```{r}
 #| include: false
@@ -640,8 +650,9 @@ grid.arrange(p1, p2, ncol = 2)
 
 ```{r}
 #| label: fig-metrics
-#| fig-cap: "**Critères de sélection du nombre de classes.** Gauche : Dendrogramme de la CAH. Droite : Méthode de Calinski-Harabasz."
+#| fig-cap: "Critères de sélection du nombre de classes. Gauche : Dendrogramme de la CAH. Droite : Méthode de Calinski-Harabasz."
 #| fig-pos: "H"
+#| fig-height: 3
 #| echo: false
 #| message: false
 #| warning: false
@@ -656,22 +667,18 @@ round(mclust::adjustedRandIndex(clust_cah, clust_kmeans), 3)
 
 On remarque la classification issus de ces deux premières méthodes sont très similaires. Pour nous en convaincre, nous avons comparé la partition issue de la CAH avec celle des K-Means à l'aide de l'Indice de Rand Ajusté (ARI). L'ARI obtenu est de 0.723. Cette valeur indique une concordance assez bonne entre les deux classifications : les méthodes identifient des structures sous-jacentes cohérentes. Nous retenons la partition K-Means pour la suite de l'analyse car elle optimise directement l'inertie intra-classe.
 
-L'analyse des profils moyens par classe, illustrée en @fig-cluster-final, permet de donner une interprétation aux trois groupes identifiés. La @fig-cluster-final superpose la projection des individus sur le premier plan factoriel de l'ACP (à gauche) et les distributions des variables les plus discriminantes (à droite).
+L'analyse des profils moyens par classe, illustrée en @fig-cluster-final, permet de donner une interprétation aux trois groupes identifiés. La @fig-cluster-final superpose la projection des individus sur le premier plan factoriel de l'ACP et les distributions des variables les plus discriminantes.
 
 Les trois clusters se distinguent nettement selon deux axes : la morphologie et l'intensité de l'entraînement. Le cluster 1 ("Gabarits Imposants") regroupe les individus de forte corpulence (poids et BMI élevés) s'entraînant à une intensité standard. À l'oppose, le cluster 2 ("Athlètes d'Endurance") se distingue par une performance physique maximale (durée, calories) associée à une morphologie sèche. Enfin, le cluster 3 ("Fitness / Loisir") rassemble des gabarits plus légers engagés dans une pratique d'entretien modérée.
 
 ```{r}
 #| label: fig-cluster-final
-#| fig-cap: "**Caractérisation des clusters retenus (K=3).** Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
+#| fig-cap: "Caractérisation des clusters retenus (K=3). Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
 #| echo: false
 #| message: false
 #| warning: false
-#| fig-width: 5.5
-#| fig-height: 3.5
+#| fig-width: 7
 
-
-
-# ACP pour visualisation
 res_pca <- PCA(df_scaled, graph = FALSE)
 p_pca <- fviz_pca_ind(res_pca, geom = "point", habillage = clust_kmeans, 
              addEllipses = TRUE,  
@@ -711,15 +718,24 @@ resBIC <- Mclust(df_scaled, G=2:10)
 summary(resBIC)
 ```
 
+
 ```{r}
 #| label: fig-model-select
-#| fig-cap: "**Sélection du modèle (BIC/ICL).** Le modèle VEV à 7 composantes minimise la perte d'information."
+#| fig-cap: "Sélection du modèle GMM. Gauche : Top 3 des modèles selon le critère ICL. Droite : Évolution du critère BIC selon le nombre de clusters."
 #| echo: false
-#| message: false
-#| fig-width: 5.5
-#| fig-height: 3.5
+#| fig-width: 7
 
-fviz_mclust(resBIC,what="BIC")
+resICL<-mclustICL(df_scaled, G = 2:10)
+
+icl_table <- as.data.frame(summary(resICL))
+colnames(icl_table) <- "Top Models ICL"
+
+grid.arrange(
+  tableGrob(icl_table), 
+  fviz_mclust(resBIC, what = "BIC"), 
+  ncol = 2, 
+  widths = c(1, 2)
+)
 ```
 
 Comme illustré en @fig-model-select, les deux critères convergent vers le modèle VEV (volumes variables, formes égales, orientations variables) avec un nombre de composantes $K=7$.Ce passage de 3 à 7 classes suggère que les groupes identifiés précédemment par les K-Means sont en réalité des "méta-classes" composées de sous-populations distinctes.
@@ -740,11 +756,23 @@ ggplot(Aux, aes(x = label, y = proba)) +
 
 ```{r}
 #| label: fig-box-gmm
-#| fig-cap: "**Profils des 7 classes (Mélanges).** Distribution des variables standardisées par cluster."
+#| fig-cap: "Caractérisation des clusters retenus (G=7). Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
 #| echo: false
-
-res_mel <- Mclust(df_scaled, G = 7, modelNames = c("VEV"))
+#| fig-width: 7
+res_mel <- Mclust(df_scaled, G = 7, modelNames = "VEV")
 clust_mel <- as.factor(res_mel$classification)
+
+res_pca <- PCA(df_scaled, graph = FALSE)
+p_pca <- fviz_pca_ind(res_pca, 
+                     geom = "point", 
+                     habillage = clust_mel,
+                     addEllipses = TRUE,  
+                     legend.title = "Cluster", 
+                     title = "Espace des individus (GMM)",
+                     label = "none", 
+                     ggtheme = theme_minimal()) +
+         theme(legend.position = "none")
+
 df_plot <- data.frame(scale(df_quanti), Cluster = clust_mel)
 df_long <- melt(df_plot, id.vars = "Cluster")
 vars_focus <- c("weight", "duration", "calories", "fat", "bmi", "height")
@@ -754,13 +782,13 @@ p_box <- ggplot(df_long_filt, aes(x = Cluster, y = value, fill = Cluster)) +
   geom_boxplot(outlier.size = 0.5, alpha = 0.8) +
   facet_wrap(~variable, scales = "free_y", ncol = 3) +
   theme_minimal() +
-  labs(y = "Z-score (écart-type)", title = "Profils sportifs") +
+  labs(y = "Z-score (écart-type)", title = "Profils sportifs (7 clusters)") +
   theme(legend.position = "right", 
         axis.text.x = element_blank(),
         strip.text = element_text(size=9, face="bold"),
         axis.title.y = element_text(size=9))
 
-grid.arrange(p_box)
+grid.arrange(p_pca, p_box, ncol = 2, widths = c(1, 1.5))
 ```
 
 ```{r}
@@ -769,22 +797,98 @@ ari_score <- adjustedRandIndex(clust_kmeans, clust_mel)
 ```
 
 ```{r}
-#| label: tbl-contingence
-#| tbl-cap: "**Comparaison des partitions.** Matrice de confusion croisant les 3 classes K-Means (lignes) et les 7 classes de Mélanges (colonnes)."
+#| label: fig-incertitude-gmm
+#| fig-cap: "Robustesse de la classification. Distribution des probabilités maximales d'appartenance par cluster."
 #| echo: false
-tab_conf <- table(Kmeans = clust_kmeans, Melanges = clust_mel)
-knitr::kable(tab_conf, booktabs = TRUE)
+
+df_proba <- data.frame(
+  Proba = apply(res_mel$z, 1, max),
+  Cluster = as.factor(clust_mel)
+)
+
+ggplot(df_proba, aes(x = Cluster, y = Proba, fill = Cluster)) +
+  geom_boxplot(alpha = 0.7, outlier.size = 1) +
+  theme_minimal() +
+  labs(
+    title = "Probabilité d'appartenance des individus par cluster",
+    y = "Probabilité d'appartenance (max)",
+    x = "Cluster GMM"
+  ) +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(0, 1))
 ```
 
-L'analyse des probabilités d'appartenance (incertitude) montre que la segmentation est globalement robuste. Pour les clusters 1, 6 et 7, la probabilité d'appartenance frôle 1 pour la majorité des individus, indiquant des profils très typés. En revanche, les clusters centraux (2, 3, 4) présentent une dispersion plus importante des probabilités, traduisant une frontière plus "floue" entre ces profils de pratiquants moyens.
+
+
+L'analyse des probabilités d'appartenance (@fig-incertitude-gmm) confirme la robustesse de la segmentation. Pour les clusters 1, 5 et 7, la probabilité maximale frôle 1, indiquant des profils très typés. À l'inverse, les clusters centraux (2, 3, 4) présentent une dispersion plus forte, traduisant une frontière plus floue entre ces profils de pratiquants "moyens".
+
+```{r}
+#| label: fig-comparaison-clsh
+#| fig-cap: "Analyse croisée des partitions. Gauche : Matrice de confusion. Droite : Plan factoriel MCA."
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 8
+
+
+# 1. Transformation de la table en objet graphique
+tab_conf <- table(Kmeans = clust_kmeans, Melanges = clust_mel)
+g_table <- tableGrob(tab_conf, theme = ttheme_minimal(base_size = 9))
+
+# 2. Préparation de la MCA
+df_classes <- data.frame(
+  KM = paste0("K", clust_kmeans),
+  GMM = paste0("G", clust_mel)
+)
+res_mca <- MCA(df_classes, graph = FALSE)
+
+p_mca <- fviz_mca_var(res_mca, 
+                      choice = "var.cat", 
+                      repel = TRUE,
+                      ggtheme = theme_minimal(),
+                      title = "Proximité factorielle")
+
+# 3. Affichage côte à côte
+grid.arrange(g_table, p_mca, ncol = 2, widths = c(1, 1.5))
+```
+
+
 
 ## Comparaison
 
-L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme on peut le voire sur la matrice de confusion (@tbl-contingence) . Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles. Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means). Le modèle K-Means ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité.
+L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme on peut le voire sur la matrice de confusion (@fig-comparaison-clsh). 
+
+Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles.
+
+Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. 
+La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means). Le modèle K-Means/CAH ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité.
+L'analyse MCA (@fig-comparaison-clsh) confirme cette interprétation : la proximité factorielle entre les classes obtunue à partir des Kmeans $K$ et celles obtenue par méthodes de mélanges $G$ prouve mathématiquement que le modèle de mélange n'est qu'une subdivision des classes K-Means.
 
 ## Conclusion
 
 Dans une optique de pilotage général et de clarté, nous recommandons de retenir la partition K-Means en 3 classes. Bien que le modèle de mélange soit statistiquement optimal (critère BIC), la division en 7 groupes complexifie l'interprétation sans nécessairement apporter de levier d'action proportionnel pour une segmentation généraliste. La partition en 3 classes capture l'essentiel de la variance (morphologie et intensité) et permet de définir des profils types suffisamment distincts. Le modèle à 7 classes pourra être conservé en tant qu'outil de "second niveau" si un besoin de personnalisation très fine se fait sentir ultérieurement.
+
+
+
+```{r}
+#| include: false
+#| label: fig-flux
+#| fig-cap: "Flux de redistribution. Visualisation du passage de la partition K-means (gauche) vers la partition GMM (droite)."
+#| echo: false
+library(ggalluvial)
+
+df_alluvial <- as.data.frame(table(df_classes))
+
+ggplot(df_alluvial, aes(y = Freq, axis1 = KM, axis2 = GMM)) +
+  geom_alluvium(aes(fill = KM), width = 1/12) +
+  geom_stratum(width = 1/12, fill = "grey90", color = "grey") +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_fill_viridis_d(option = "D") +
+  theme_minimal() +
+  labs(title = "Redistribution des individus entre les modèles")
+
+```
+
 
 
 # Étude du nombre de calories brûlées
