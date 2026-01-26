@@ -203,8 +203,20 @@ ggplot(Aux, aes(x = label, y = proba)) +
 #| fig-cap: "**Profils des 7 classes (Mélanges).** Distribution des variables standardisées par cluster."
 #| echo: false
 
-res_mel <- Mclust(df_scaled, G = 7, modelNames = c("VEV"))
-clust_mel <- as.factor(res_mel$classification)
+res_mel <- Mclust(df_scaled, G = 7, modelNames = "VEV")
+clust_mel <- as.factor(res_mel$classification) # Extraction explicite
+
+res_pca <- PCA(df_scaled, graph = FALSE)
+p_pca <- fviz_pca_ind(res_pca, 
+                     geom = "point", 
+                     habillage = clust_mel, # Utilisation du facteur explicite
+                     addEllipses = TRUE,  
+                     legend.title = "Cluster", 
+                     title = "Espace des individus (GMM)",
+                     label = "none", 
+                     ggtheme = theme_minimal()) +
+         theme(legend.position = "none")
+
 df_plot <- data.frame(scale(df_quanti), Cluster = clust_mel)
 df_long <- melt(df_plot, id.vars = "Cluster")
 vars_focus <- c("weight", "duration", "calories", "fat", "bmi", "height")
@@ -214,13 +226,13 @@ p_box <- ggplot(df_long_filt, aes(x = Cluster, y = value, fill = Cluster)) +
   geom_boxplot(outlier.size = 0.5, alpha = 0.8) +
   facet_wrap(~variable, scales = "free_y", ncol = 3) +
   theme_minimal() +
-  labs(y = "Z-score (écart-type)", title = "Profils sportifs") +
+  labs(y = "Z-score (écart-type)", title = "Profils sportifs (7 clusters)") +
   theme(legend.position = "right", 
         axis.text.x = element_blank(),
         strip.text = element_text(size=9, face="bold"),
         axis.title.y = element_text(size=9))
 
-grid.arrange(p_box)
+grid.arrange(p_pca, p_box, ncol = 2, widths = c(1, 1.4))
 ```
 
 ```{r}
@@ -228,20 +240,65 @@ grid.arrange(p_box)
 ari_score <- adjustedRandIndex(clust_kmeans, clust_mel)
 ```
 
-```{r}
-#| label: tbl-contingence
-#| tbl-cap: "**Comparaison des partitions.** Matrice de confusion croisant les 3 classes K-Means (lignes) et les 7 classes de Mélanges (colonnes)."
-#| echo: false
-tab_conf <- table(Kmeans = clust_kmeans, Melanges = clust_mel)
-knitr::kable(tab_conf, booktabs = TRUE)
-```
+
 
 L'analyse des probabilités d'appartenance (incertitude) montre que la segmentation est globalement robuste. Pour les clusters 1, 6 et 7, la probabilité d'appartenance frôle 1 pour la majorité des individus, indiquant des profils très typés. En revanche, les clusters centraux (2, 3, 4) présentent une dispersion plus importante des probabilités, traduisant une frontière plus "floue" entre ces profils de pratiquants moyens.
 
+```{r}
+#| label: fig-comparaison-clsh
+#| fig-cap: "**Analyse croisée des partitions.** Gauche : Matrice de confusion. Droite : Plan factoriel MCA."
+#| echo: false
+#| warning: false
+#| message: false
+
+# 1. Transformation de la table en objet graphique
+tab_conf <- table(Kmeans = clust_kmeans, Melanges = clust_mel)
+g_table <- tableGrob(tab_conf, theme = ttheme_minimal(base_size = 9))
+
+# 2. Préparation de la MCA
+df_classes <- data.frame(
+  KM = paste0("K", clust_kmeans),
+  GMM = paste0("G", clust_mel)
+)
+res_mca <- MCA(df_classes, graph = FALSE)
+
+p_mca <- fviz_mca_var(res_mca, 
+                      choice = "var.cat", 
+                      repel = TRUE,
+                      ggtheme = theme_minimal(),
+                      title = "Proximité factorielle")
+
+# 3. Affichage côte à côte
+grid.arrange(g_table, p_mca, ncol = 2, widths = c(1, 1.5))
+```
+
+
+
 **Comparaison**
 
-L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme on peut le voire sur la matrice de confusion (@tbl-contingence) . Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles. Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means). Le modèle K-Means ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité.
+L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme on peut le voire sur la matrice de confusion (@fig-comparaison-clsh). Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles.Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means).Le modèle K-Means ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité. L'analyse MCA (@fig-comparaison-clsh) confirme cette interprétation : la proximité factorielle entre les classes obtunue à partir des Kmeans $K$ et celles obtenue par méthodes de mélanges $G$ prouve mathématiquement que le modèle de mélange n'est qu'une subdivision des classes K-Means.
 
 **Conclusion**
 
 Dans une optique de pilotage général et de clarté, nous recommandons de retenir la partition K-Means en 3 classes. Bien que le modèle de mélange soit statistiquement optimal (critère BIC), la division en 7 groupes complexifie l'interprétation sans nécessairement apporter de levier d'action proportionnel pour une segmentation généraliste. La partition en 3 classes capture l'essentiel de la variance (morphologie et intensité) et permet de définir des profils types suffisamment distincts. Le modèle à 7 classes pourra être conservé en tant qu'outil de "second niveau" si un besoin de personnalisation très fine se fait sentir ultérieurement.
+
+
+
+```{r}
+#| include: false
+#| label: fig-alluvial
+#| fig-cap: "**Flux de redistribution.** Visualisation du passage de la partition K-means (gauche) vers la partition GMM (droite)."
+#| echo: false
+library(ggalluvial)
+
+df_alluvial <- as.data.frame(table(df_classes))
+
+ggplot(df_alluvial, aes(y = Freq, axis1 = KM, axis2 = GMM)) +
+  geom_alluvium(aes(fill = KM), width = 1/12) +
+  geom_stratum(width = 1/12, fill = "grey90", color = "grey") +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_fill_viridis_d(option = "D") +
+  theme_minimal() +
+  labs(title = "Redistribution des individus entre les modèles")
+
+```
