@@ -6,8 +6,8 @@ format:
     toc: true
     number-sections: true
 lang: fr
-fontsize: 11pt
-geometry: margin=2cm
+fontsize: 10pt
+geometry: margin=1.5cm
 ---
 
 ```{r setup, include=FALSE}
