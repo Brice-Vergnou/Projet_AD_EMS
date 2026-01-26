@@ -68,6 +68,8 @@ num_vars <- data %>% dplyr::select(where(is.numeric))
 
 # Analyse descriptive
 
+Avant de manipuler les données pour effectuer différents tests, il est important de proprement explorer celles-ci pour avoir une idée générale de ce qu'elles représentent pour que nos tests soient plus précis et utiles.
+
 ```{r head-table, echo=FALSE}
 knitr::kable(
   head(data, 10),
@@ -162,8 +164,6 @@ M <- cor(num_vars, use = "pairwise.complete.obs")
 corrplot(M, method = "ellipse", order = "hclust")
 ```
 
-
----
 
 # Visualisation dans un espace à faible dimension
 
@@ -300,7 +300,7 @@ grid.arrange(g2,g1,ncol=2, widths = c(2,3.6))
 Dans le cercle de corrélation, on observe que les variables *fat* d’une part, et *calories*, *duration*, etc. d’autre part, contribuent toutes à la formation de la première dimension, mais dans des directions opposées, ce qui est cohérent avec leur relation inverse.
 
 Par ailleurs, les variables *poids*, *la consommation d’eau* et *taille* influencent principalement la construction du deuxième axe factoriel
----
+
 
 ## Variables qualitatives
 
@@ -455,7 +455,6 @@ Une Analyse des Correspondances Multiples a été réalisée sur l'ensemble des 
 
 À l'inverse, les modalités liées au genre et au type de sport se concentrent autour du centre de gravité du nuage. Cette proximité avec l'origine indique une contribution marginale à la dispersion globale. Cette configuration confirme visuellement les résultats des tests statistiques précédents : la différenciation des individus ne repose pas sur leurs caractéristiques socio-démographiques ou leurs préférences d'activité, mais est structurée quasi-exclusivement par leur dynamique d'entraînement (couple Fréquence-Niveau).
 
----
 
 # Test d'hypothèses
 
@@ -488,7 +487,7 @@ La variable calories brûlées ne suit pas une loi normale
 
 Test d'hypothèse : Influence du genre sur les calories : La normalité n'étant pas vérifiée, nous utilisons le test non paramétrique de Wilcoxon-Mann-Whitney pour déterminer si la distribution des calories brûlées diffère significativement entre les hommes et les femmes
 
-## Dépendance entre variables
+## Dépendance entre variables
 
 ```{r}
 #| label: test_wilcoxon
@@ -569,7 +568,6 @@ res_chi2_level
 ```
 -   De même pour le lien **Niveau / Genre**, la p-valeur est proche de 1 (**p = 0.9936**), ce qui confirme une absence totale de dépendance. La répartition des niveaux d'expérience (débutant, intermédiaire, expert) est statistiquement identique chez les hommes et les femmes.
 
----
 
 # Clustering des individus
 
@@ -951,7 +949,7 @@ model_logit <- glm(levelBis ~ ., data = gym, family = binomial(link = "logit"))
 summary(model_logit)
 ```
 
-En regardant les p-valeurs, on constate qu'aucune des variables n'est significative, ce qui est étrange car l'analyse descriptive montre que beaucoup de variables sont liées entre elles. En regardant de plus près, on constate que l'estimation et l'écart-type des fréquences est très important par rapport aux autres variables. Nous allons donc faire un modèle sans cette variable.
+En regardant les p-valeurs, on constate qu'aucune des variables n'est significative, ce qui est étrange car l'analyse descriptive montre que beaucoup de variables sont liées entre elles. En regardant de plus près, on constate que l'estimation et l'écart-type des fréquences est très important par rapport aux autres variables. Nous allons donc faire un modèle sans cette variable car celle-ci à l'air d'écraser les autres sans pour autant apporter grand chose.
 
 ```{r}
 #| label: logistic_model_2
@@ -962,20 +960,22 @@ model_logit1<- glm(levelBis ~ ., data = gym, family = binomial(link = "logit"))
 summary(model_logit1)
 ```
 
-On voit que les p-valeurs sont plus cohérentes car nous avons certaines variables qui sont explicatives et d'autres non. Pour faire le tri dans ces variables, nous allons procéder à une sélection de modèle par critère BIC.
+On voit que les p-valeurs sont plus cohérentes car nous avons certaines variables qui sont explicatives et d'autres non. Nous avons beaucoup de variables ce qui peut mener à de l'overfitting. Pour faire le tri dans ces variables, nous allons procéder à une sélection de modèle par critère AIC en backwards. Celui-ci va partir du modèle quasi-complet (modèle complet privé des fréquences) et progressivement retirer les variables explicatives qui minimisent le moins ce critère.
 
-```{r fig-bic-logit, fig.width=8, fig.height=5, fig.cap="Sélection exhaustive des variables explicatives par le critère BIC pour le modèle logistique."}
-      
-regfit_logit <- regsubsets(
-  levelBis ~ .,
-  data = gym,
-  nvmax = 15,
-  method = "exhaustive"
-)
-plot(regfit_logit, scale = "bic")
+```{r}
+#| results: hide
+#| message: false
+#| warning: false
+choix=stepAIC(model_logit1,k=log(nrow(gym)),direction="backward")
 ```
 
-Cette procédure nous donne le modèle $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$.
+Après éxécution de cet algorithme, nous obtenons comme meilleur modèle le modèle suivant :
+
+```{r}
+formula(choix)
+```
+
+Nous pouvons donc supposer que la meilleure modélisation est $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$. Cependant, il nous faut quand même valider ce modèle pour vérifier qu'il nous donne les mêmes information que le modèle quasi-complet.
 
 ```{r}
 model.bic <- glm(levelBis ~ fat + duration, data = gym, family = binomial(link = "logit"))
