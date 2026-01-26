@@ -104,7 +104,7 @@ grid.arrange(p1, p2, ncol = 2)
 
 ```{r}
 #| label: fig-metrics
-#| fig-cap: "**Critères de sélection du nombre de classes.** Gauche : Dendrogramme de la CAH. Droite : Méthode de Calinski-Harabasz."
+#| fig-cap: "Critères de sélection du nombre de classes. Gauche : Dendrogramme de la CAH. Droite : Méthode de Calinski-Harabasz."
 #| fig-pos: "H"
 #| fig-height: 3
 #| echo: false
@@ -127,10 +127,11 @@ Les trois clusters se distinguent nettement selon deux axes : la morphologie et 
 
 ```{r}
 #| label: fig-cluster-final
-#| fig-cap: "**Caractérisation des clusters retenus (K=3).** Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
+#| fig-cap: "Caractérisation des clusters retenus (K=3). Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
 #| echo: false
 #| message: false
 #| warning: false
+#| fig-width: 7
 
 res_pca <- PCA(df_scaled, graph = FALSE)
 p_pca <- fviz_pca_ind(res_pca, geom = "point", habillage = clust_kmeans, 
@@ -174,11 +175,11 @@ summary(resBIC)
 
 ```{r}
 #| label: fig-model-select
-#| fig-cap: "**Sélection du modèle GMM.** Gauche : Top 3 des modèles selon le critère ICL. Droite : Évolution du critère BIC selon le nombre de clusters."
+#| fig-cap: "Sélection du modèle GMM. Gauche : Top 3 des modèles selon le critère ICL. Droite : Évolution du critère BIC selon le nombre de clusters."
 #| echo: false
-#| 
+#| fig-width: 7
+
 resICL<-mclustICL(df_scaled, G = 2:10)
-summary(resICL)
 
 icl_table <- as.data.frame(summary(resICL))
 colnames(icl_table) <- "Top Models ICL"
@@ -209,7 +210,7 @@ ggplot(Aux, aes(x = label, y = proba)) +
 
 ```{r}
 #| label: fig-box-gmm
-#| fig-cap: "**Caractérisation des clusters retenus (G=7).** Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
+#| fig-cap: "Caractérisation des clusters retenus (G=7). Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
 #| echo: false
 #| fig-width: 7
 res_mel <- Mclust(df_scaled, G = 7, modelNames = "VEV")
@@ -251,7 +252,7 @@ ari_score <- adjustedRandIndex(clust_kmeans, clust_mel)
 
 ```{r}
 #| label: fig-incertitude-gmm
-#| fig-cap: "**Robustesse de la classification.** Distribution des probabilités maximales d'appartenance par cluster (Incertitude)."
+#| fig-cap: "Robustesse de la classification. Distribution des probabilités maximales d'appartenance par cluster."
 #| echo: false
 
 df_proba <- data.frame(
@@ -259,12 +260,11 @@ df_proba <- data.frame(
   Cluster = as.factor(clust_mel)
 )
 
-# Visualisation par boxplot
 ggplot(df_proba, aes(x = Cluster, y = Proba, fill = Cluster)) +
   geom_boxplot(alpha = 0.7, outlier.size = 1) +
   theme_minimal() +
   labs(
-    title = "Certitude d'appartenance par cluster",
+    title = "Probabilité d'appartenance des individus par cluster",
     y = "Probabilité d'appartenance (max)",
     x = "Cluster GMM"
   ) +
@@ -278,10 +278,12 @@ L'analyse des probabilités d'appartenance (@fig-incertitude-gmm) confirme la ro
 
 ```{r}
 #| label: fig-comparaison-clsh
-#| fig-cap: "**Analyse croisée des partitions.** Gauche : Matrice de confusion. Droite : Plan factoriel MCA."
-#| echo: false
+#| fig-cap: "Analyse croisée des partitions. Gauche : Matrice de confusion. Droite : Plan factoriel MCA."
+  #| echo: false
 #| warning: false
 #| message: false
+#| fig-width: 8
+
 
 # 1. Transformation de la table en objet graphique
 tab_conf <- table(Kmeans = clust_kmeans, Melanges = clust_mel)
@@ -308,7 +310,13 @@ grid.arrange(g_table, p_mca, ncol = 2, widths = c(1, 1.5))
 
 **Comparaison**
 
-L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme on peut le voire sur la matrice de confusion (@fig-comparaison-clsh). Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles.Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means).Le modèle K-Means ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité. L'analyse MCA (@fig-comparaison-clsh) confirme cette interprétation : la proximité factorielle entre les classes obtunue à partir des Kmeans $K$ et celles obtenue par méthodes de mélanges $G$ prouve mathématiquement que le modèle de mélange n'est qu'une subdivision des classes K-Means.
+L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme on peut le voire sur la matrice de confusion (@fig-comparaison-clsh). 
+
+Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles.
+
+Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. 
+La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means). Le modèle K-Means/CAH ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité.
+L'analyse MCA (@fig-comparaison-clsh) confirme cette interprétation : la proximité factorielle entre les classes obtunue à partir des Kmeans $K$ et celles obtenue par méthodes de mélanges $G$ prouve mathématiquement que le modèle de mélange n'est qu'une subdivision des classes K-Means.
 
 **Conclusion**
 
@@ -318,8 +326,8 @@ Dans une optique de pilotage général et de clarté, nous recommandons de reten
 
 ```{r}
 #| include: false
-#| label: fig-alluvial
-#| fig-cap: "**Flux de redistribution.** Visualisation du passage de la partition K-means (gauche) vers la partition GMM (droite)."
+#| label: fig-flux
+#| fig-cap: "Flux de redistribution. Visualisation du passage de la partition K-means (gauche) vers la partition GMM (droite)."
 #| echo: false
 library(ggalluvial)
 
