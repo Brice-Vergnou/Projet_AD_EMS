@@ -57,7 +57,7 @@ Silhouette moyenne : Le score atteint son maximum global pour $K=3$ sur la @fig-
 #| label: fig-coude_silhouette
 #| fig-cap: "Méthode du coude et Silhouette"
 #| echo: false
-#| fig-height: 3
+#| 
 p3 <- fviz_nbclust(df_scaled, kmeans, method = "wss") + 
   labs(title="Inertie Intra-classe", x="Nbr de classes", y="Inertie") + theme_minimal()
 
@@ -81,7 +81,7 @@ clust_kmeans <- as.factor(res_km$cluster)
 
 Une seconde approche explorée est celle d'un modèle de classification emboîté (CAH). Cette méthode a été privilégiée pour sa capacité à révéler l'architecture structurelle des données sans imposer de nombre de classes a priori. Le choix du nombre de groupes $K$ repose sur plusieurs critères : l'analyse du dendrogramme et le critère de Calinski-Harabasz.
 
-La @fig-metrics synthétise ces indicateurs. Le dendrogramme met en évidence une perte d'inertie très significative lors du passage de 3 à 2 classes, suggérant que la partition en 3 groupes est la plus naturelle. Cette observation est corroborée par l'indicateur de Calinski-Harabasz, on observe un maximum du critère à 3 classes.
+La @fig-metrics synthétise ces indicateurs. Le dendrogramme met en évidence une perte d'inertie très significative lors du passage de 3 à 2 classes, suggérant que la partition en 3 groupes est la plus naturelle. Cette observation est corroborée par les indicateurs de Calinski-Harabasz, on observe un maximum du critère à 3 classes.
 
 ```{r}
 #| include: false
@@ -106,7 +106,6 @@ grid.arrange(p1, p2, ncol = 2)
 #| label: fig-metrics
 #| fig-cap: "**Critères de sélection du nombre de classes.** Gauche : Dendrogramme de la CAH. Droite : Méthode de Calinski-Harabasz."
 #| fig-pos: "H"
-#| fig-height: 3
 #| echo: false
 #| message: false
 #| warning: false
@@ -121,7 +120,7 @@ round(mclust::adjustedRandIndex(clust_cah, clust_kmeans), 3)
 
 On remarque la classification issus de ces deux premières méthodes sont très similaires. Pour nous en convaincre, nous avons comparé la partition issue de la CAH avec celle des K-Means à l'aide de l'Indice de Rand Ajusté (ARI). L'ARI obtenu est de 0.723. Cette valeur indique une concordance assez bonne entre les deux classifications : les méthodes identifient des structures sous-jacentes cohérentes. Nous retenons la partition K-Means pour la suite de l'analyse car elle optimise directement l'inertie intra-classe.
 
-L'analyse des profils moyens par classe, illustrée en @fig-cluster-final, permet de donner une interprétation aux trois groupes identifiés. La @fig-cluster-final superpose la projection des individus sur le premier plan factoriel de l'ACP et les distributions des variables les plus discriminantes.
+L'analyse des profils moyens par classe, illustrée en @fig-cluster-final, permet de donner une interprétation aux trois groupes identifiés. La @fig-cluster-final superpose la projection des individus sur le premier plan factoriel de l'ACP (à gauche) et les distributions des variables les plus discriminantes (à droite).
 
 Les trois clusters se distinguent nettement selon deux axes : la morphologie et l'intensité de l'entraînement. Le cluster 1 ("Gabarits Imposants") regroupe les individus de forte corpulence (poids et BMI élevés) s'entraînant à une intensité standard. À l'oppose, le cluster 2 ("Athlètes d'Endurance") se distingue par une performance physique maximale (durée, calories) associée à une morphologie sèche. Enfin, le cluster 3 ("Fitness / Loisir") rassemble des gabarits plus légers engagés dans une pratique d'entretien modérée.
 
@@ -132,6 +131,9 @@ Les trois clusters se distinguent nettement selon deux axes : la morphologie et 
 #| message: false
 #| warning: false
 
+
+
+# ACP pour visualisation
 res_pca <- PCA(df_scaled, graph = FALSE)
 p_pca <- fviz_pca_ind(res_pca, geom = "point", habillage = clust_kmeans, 
              addEllipses = TRUE,  
@@ -171,24 +173,13 @@ resBIC <- Mclust(df_scaled, G=2:10)
 summary(resBIC)
 ```
 
-
 ```{r}
 #| label: fig-model-select
-#| fig-cap: "**Sélection du modèle GMM.** Gauche : Top 3 des modèles selon le critère ICL. Droite : Évolution du critère BIC selon le nombre de clusters."
+#| fig-cap: "**Sélection du modèle (BIC/ICL).** Le modèle VEV à 7 composantes minimise la perte d'information."
 #| echo: false
-#| 
-resICL<-mclustICL(df_scaled, G = 2:10)
-summary(resICL)
+#| message: false
 
-icl_table <- as.data.frame(summary(resICL))
-colnames(icl_table) <- "Top Models ICL"
-
-grid.arrange(
-  tableGrob(icl_table), 
-  fviz_mclust(resBIC, what = "BIC"), 
-  ncol = 2, 
-  widths = c(1, 2)
-)
+fviz_mclust(resBIC,what="BIC")
 ```
 
 Comme illustré en @fig-model-select, les deux critères convergent vers le modèle VEV (volumes variables, formes égales, orientations variables) avec un nombre de composantes $K=7$.Ce passage de 3 à 7 classes suggère que les groupes identifiés précédemment par les K-Means sont en réalité des "méta-classes" composées de sous-populations distinctes.
@@ -209,23 +200,11 @@ ggplot(Aux, aes(x = label, y = proba)) +
 
 ```{r}
 #| label: fig-box-gmm
-#| fig-cap: "**Caractérisation des clusters retenus (G=7).** Gauche : Projection sur le plan factoriel. Droite : Boxplots des variables discriminantes."
+#| fig-cap: "**Profils des 7 classes (Mélanges).** Distribution des variables standardisées par cluster."
 #| echo: false
-#| fig-width: 7
-res_mel <- Mclust(df_scaled, G = 7, modelNames = "VEV")
+
+res_mel <- Mclust(df_scaled, G = 7, modelNames = c("VEV"))
 clust_mel <- as.factor(res_mel$classification)
-
-res_pca <- PCA(df_scaled, graph = FALSE)
-p_pca <- fviz_pca_ind(res_pca, 
-                     geom = "point", 
-                     habillage = clust_mel,
-                     addEllipses = TRUE,  
-                     legend.title = "Cluster", 
-                     title = "Espace des individus (GMM)",
-                     label = "none", 
-                     ggtheme = theme_minimal()) +
-         theme(legend.position = "none")
-
 df_plot <- data.frame(scale(df_quanti), Cluster = clust_mel)
 df_long <- melt(df_plot, id.vars = "Cluster")
 vars_focus <- c("weight", "duration", "calories", "fat", "bmi", "height")
@@ -235,13 +214,13 @@ p_box <- ggplot(df_long_filt, aes(x = Cluster, y = value, fill = Cluster)) +
   geom_boxplot(outlier.size = 0.5, alpha = 0.8) +
   facet_wrap(~variable, scales = "free_y", ncol = 3) +
   theme_minimal() +
-  labs(y = "Z-score (écart-type)", title = "Profils sportifs (7 clusters)") +
+  labs(y = "Z-score (écart-type)", title = "Profils sportifs") +
   theme(legend.position = "right", 
         axis.text.x = element_blank(),
         strip.text = element_text(size=9, face="bold"),
         axis.title.y = element_text(size=9))
 
-grid.arrange(p_pca, p_box, ncol = 2, widths = c(1, 1.5))
+grid.arrange(p_box)
 ```
 
 ```{r}
@@ -250,87 +229,20 @@ ari_score <- adjustedRandIndex(clust_kmeans, clust_mel)
 ```
 
 ```{r}
-#| label: fig-incertitude-gmm
-#| fig-cap: "**Robustesse de la classification.** Distribution des probabilités maximales d'appartenance par cluster (Incertitude)."
+#| label: tbl-contingence
+#| tbl-cap: "**Comparaison des partitions.** Matrice de confusion croisant les 3 classes K-Means (lignes) et les 7 classes de Mélanges (colonnes)."
 #| echo: false
-
-df_proba <- data.frame(
-  Proba = apply(res_mel$z, 1, max),
-  Cluster = as.factor(clust_mel)
-)
-
-# Visualisation par boxplot
-ggplot(df_proba, aes(x = Cluster, y = Proba, fill = Cluster)) +
-  geom_boxplot(alpha = 0.7, outlier.size = 1) +
-  theme_minimal() +
-  labs(
-    title = "Certitude d'appartenance par cluster",
-    y = "Probabilité d'appartenance (max)",
-    x = "Cluster GMM"
-  ) +
-  theme(legend.position = "none") +
-  scale_y_continuous(limits = c(0, 1))
-```
-
-
-
-L'analyse des probabilités d'appartenance (@fig-incertitude-gmm) confirme la robustesse de la segmentation. Pour les clusters 1, 5 et 7, la probabilité maximale frôle 1, indiquant des profils très typés. À l'inverse, les clusters centraux (2, 3, 4) présentent une dispersion plus forte, traduisant une frontière plus floue entre ces profils de pratiquants "moyens".
-
-```{r}
-#| label: fig-comparaison-clsh
-#| fig-cap: "**Analyse croisée des partitions.** Gauche : Matrice de confusion. Droite : Plan factoriel MCA."
-#| echo: false
-#| warning: false
-#| message: false
-
-# 1. Transformation de la table en objet graphique
 tab_conf <- table(Kmeans = clust_kmeans, Melanges = clust_mel)
-g_table <- tableGrob(tab_conf, theme = ttheme_minimal(base_size = 9))
-
-# 2. Préparation de la MCA
-df_classes <- data.frame(
-  KM = paste0("K", clust_kmeans),
-  GMM = paste0("G", clust_mel)
-)
-res_mca <- MCA(df_classes, graph = FALSE)
-
-p_mca <- fviz_mca_var(res_mca, 
-                      choice = "var.cat", 
-                      repel = TRUE,
-                      ggtheme = theme_minimal(),
-                      title = "Proximité factorielle")
-
-# 3. Affichage côte à côte
-grid.arrange(g_table, p_mca, ncol = 2, widths = c(1, 1.5))
+knitr::kable(tab_conf, booktabs = TRUE)
 ```
 
-
+L'analyse des probabilités d'appartenance (incertitude) montre que la segmentation est globalement robuste. Pour les clusters 1, 6 et 7, la probabilité d'appartenance frôle 1 pour la majorité des individus, indiquant des profils très typés. En revanche, les clusters centraux (2, 3, 4) présentent une dispersion plus importante des probabilités, traduisant une frontière plus "floue" entre ces profils de pratiquants moyens.
 
 **Comparaison**
 
-L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme on peut le voire sur la matrice de confusion (@fig-comparaison-clsh). Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles.Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means).Le modèle K-Means ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité. L'analyse MCA (@fig-comparaison-clsh) confirme cette interprétation : la proximité factorielle entre les classes obtunue à partir des Kmeans $K$ et celles obtenue par méthodes de mélanges $G$ prouve mathématiquement que le modèle de mélange n'est qu'une subdivision des classes K-Means.
+L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme on peut le voire sur la matrice de confusion (@tbl-contingence) . Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles. Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means). Le modèle K-Means ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité.
 
 **Conclusion**
 
 Dans une optique de pilotage général et de clarté, nous recommandons de retenir la partition K-Means en 3 classes. Bien que le modèle de mélange soit statistiquement optimal (critère BIC), la division en 7 groupes complexifie l'interprétation sans nécessairement apporter de levier d'action proportionnel pour une segmentation généraliste. La partition en 3 classes capture l'essentiel de la variance (morphologie et intensité) et permet de définir des profils types suffisamment distincts. Le modèle à 7 classes pourra être conservé en tant qu'outil de "second niveau" si un besoin de personnalisation très fine se fait sentir ultérieurement.
 
-
-
-```{r}
-#| include: false
-#| label: fig-alluvial
-#| fig-cap: "**Flux de redistribution.** Visualisation du passage de la partition K-means (gauche) vers la partition GMM (droite)."
-#| echo: false
-library(ggalluvial)
-
-df_alluvial <- as.data.frame(table(df_classes))
-
-ggplot(df_alluvial, aes(y = Freq, axis1 = KM, axis2 = GMM)) +
-  geom_alluvium(aes(fill = KM), width = 1/12) +
-  geom_stratum(width = 1/12, fill = "grey90", color = "grey") +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  scale_fill_viridis_d(option = "D") +
-  theme_minimal() +
-  labs(title = "Redistribution des individus entre les modèles")
-
-```

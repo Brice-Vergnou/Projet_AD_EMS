@@ -60,6 +60,11 @@ library(MASS)
 
 ```
 
+
+
+Afin d'explorer la structure globale du jeu de données et d'identifier d'éventuels profils types parmi les individus, nous réalisons une Analyse en Composantes Principales (ACP). Cette méthode nous permet de réduire la dimensionnalité des variables quantitatives tout en conservant le maximum d'information.
+
+
 ```{r}
 #| label: summary_table
 #| tbl-cap: "Résumé statistique des variables du jeu de données Gym"
@@ -74,7 +79,7 @@ summary(gym)
 
 ```
 
-Il est essentiel de normaliser les données, car les variables n’ont pas la même échelle. Par exemple, la variable *calories* varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles. Sans normalisation, la variable *calories* prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données
+En affichant @summary_table , on remarque qu'il est essentiel de normaliser les données, car les variables n’ont pas la même échelle. Par exemple, la variable calories varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles. Sans normalisation, la variable calories prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données
 
 ```{r}
 #| label: summary_table2
@@ -87,15 +92,18 @@ sum(respca$eig[,1])
 
 ```
 
-```{r}
-#| label: summary_table1
+Choix du nombre de dimensions (Éboulis des valeurs propres) : La première étape de l'ACP consiste à déterminer combien d'axes factoriels sont nécessaires pour résumer l'information. Nous analysons l'éboulis des valeurs propres pour identifier le nombre de dimensions qui capturent la majorité de l'inertie (variance) du nuage de données, tout en éliminant le "bruit" statistique.
+
+```{r summary_table1}
 #| fig-cap: "Éboulis des valeurs propres : choix du nombre de dimensions"
 #| echo: false
 fviz_eig(respca)
 
 ```
 
-On constate qu’il est possible de conserver uniquement les quatre premières dimensions, car à elles seules, elles expliquent 79,10 % de la variabilité totale des données. Cela signifie qu’elles suffisent à représenter l’essentiel de l’information contenue dans le jeu de données
+On constate d'aprés @summary_table1 qu’il est possible de conserver uniquement les cinq premières dimensions, car à elles seules, elles expliquent 89.19 % de la variabilité totale des données. Cela signifie qu’elles suffisent à représenter l’essentiel de l’information contenue dans le jeu de données
+
+Qualité de représentation des variables : Une fois les axes retenus, nous devons comprendre leur signification. Pour cela, nous examinons la qualité de représentation (Cos²) des variables initiales sur chaque dimension. Une variable fortement représentée sur un axe contribue majoritairement à sa définition
 
 ```{r}
 #| label: summary_table3
@@ -105,7 +113,7 @@ respca$var$cos2
 #respca$var$contrib
 ```
 
-L'analyse de la **qualité de représentation des variables** (basée sur le critère du **cos²**) sur les cinq dimensions retenues met en évidence la structure suivante :
+L'analyse de la **qualité de représentation des variables** (basée sur le critère du **cos²**) sur les cinq dimensions retenues @summary_table3 met en évidence la structure suivante :
 
 -   La **1ère dimension** est principalement caractérisée par les variables *fat*, *calories*, *duration* et *water*, qui y sont le mieux représentées.
 
@@ -115,6 +123,7 @@ L'analyse de la **qualité de représentation des variables** (basée sur le cri
 
 -   Enfin, alors que la **4ème dimension** ne semble capturer aucune contribution significative de la part des variables, l'**âge** et la **fréquence cardiaque moyenne** (*bpm_ave*) sont les variables les plus corrélées à la **5ème dimension**.
 
+Structure globale de la population (Nuage des individus) : Nous projetons les individus dans le nouvel espace réduit défini par les deux premières composantes principales. Cette vue d'ensemble permet de repérer la topologie générale des données
 ```{r}
 #| label: summary_table4
 #| echo: false
@@ -167,6 +176,7 @@ En revanche, aucune tendance claire ne se dégage concernant le type, les indivi
 
 Pour la fréquence, on observe qu’elle influence surtout l’axe 1 : plus on se déplace vers la droite, plus la fréquence augmente. Cela est cohérent avec le cercle de corrélation, où l’axe 1 est associé à un nombre plus élevé de calories brûlées et à une présence plus régulière en salle, ce qui reflète logiquement une fréquence d’entraînement plus importante
 
+Visualisation des relations entre variables (Cercle des corrélations) : Le cercle des corrélations projette les vecteurs des variables quantitatives sur le premier plan factoriel
 ```{r}
 #| label: summary_table8
 #| echo: false
@@ -188,7 +198,7 @@ grid.arrange(g2,g3,ncol=2, widths = c(2,3.6))
 grid.arrange(g2,g1,ncol=2, widths = c(2,3.6))
 
 ```
-
+Vérification de la normalité de la variable cible : Avant d'effectuer des tests de comparaison de moyennes sur la variable calories, nous devons vérifier si celle-ci suit une distribution normale
 ```{r}
 
 #| echo: false     
@@ -215,6 +225,7 @@ Avec le test de Shapiro-Wilk on trouve une p-valeur de 2.982e-0.5 qui est trés 
 
 La variable calories brûlées ne suit pas une loi normale
 
+Test d'hypothèse : Influence du genre sur les calories : La normalité n'étant pas vérifiée, nous utilisons le test non paramétrique de Wilcoxon-Mann-Whitney pour déterminer si la distribution des calories brûlées diffère significativement entre les hommes et les femmes
 ```{r}
 
 #| label: test_wilcoxon
@@ -231,10 +242,9 @@ res_wilcox
 
 ```
 
-Comme les tests de normalité de Shapiro-Wilk ont rejeté l'hypothèse de normalité pour la variable calories.
+La p-valeur obtenue est 1.139e-05 qui est trés faible donc on rejette donc l'hypothèse nulle : il y a une différence significative de calories brûlées entre les hommes et les femmes.
 
-Nous avons donc réalisé un test de Wilcoxon-Mann-Whitney (non-paramétrique). La p-valeur obtenue est 1.139e-05 qui est trés faible donc on rejette donc l'hypothèse nulle : il y a une différence significative de calories brûlées entre les hommes et les femmes.
-
+Afin d'affiner l'analyse, nous avons appliqué le test de Wilcoxon-Mann-Whitney séparément pour chaque type de sport. Les résultats mettent en évidence une nuance importante :
 ```{r}
 #| label: tests_Mann-Whitney
 #| echo: false     
@@ -258,12 +268,11 @@ res_wilcox3
 res_wilcox4 <- wilcox.test(calories ~ gender, data = sub4)
 res_wilcox4
 ```
-
-Afin d'affiner l'analyse, nous avons appliqué le test de Wilcoxon-Mann-Whitney séparément pour chaque type de sport. Les résultats mettent en évidence une nuance importante :
-
 Pour le HIIT, le Cardio et le Strength, la p-valeur est inférieure au seuil de 5% . On rejette donc l'hypothèse nulle : pour ces activités intenses, le genre a un impact significatif sur la dépense calorique (les hommes brûlant généralement plus de calories que les femmes du fait de leur métabolisme et gabarit moyen supérieur). En revanche, pour le Yoga, la p-valeur est élevée 0.3946 . On ne peut donc pas rejeter l'hypothèse nulle. Cela suggère que pour cette pratique spécifique, la dépense calorique ne diffère pas significativement entre les hommes et les femmes dans notre échantillon.
 
 Cela montre que la conclusion générale ("le genre influence les calories") n'est pas absolue : elle dépend du type d'activité.
+
+Tests d'indépendance (Variables Qualitatives) : Nous cherchons à savoir si le comportement des individus (choix du sport, niveau d'expérience) est conditionné par leur genre. Étant donné qu'il s'agit du croisement de deux variables qualitatives, nous appliquons des tests du (Khi-2) d'indépendance
 
 ```{r}
 #| label: tests_chi2
@@ -276,7 +285,7 @@ tab_type_gender <- table(gym$type, gym$gender)
 res_chi2_type <- chisq.test(tab_type_gender)
 res_chi2_type
 ```
-
+-   Concernant le lien **Type de sport / Genre**, la p-valeur obtenue est très élevée (**p = 0.7052**). Nous ne rejetons donc pas l'hypothèse nulle d'indépendance. Le choix de la discipline sportive ne dépend pas significativement du genre dans notre échantillon
 ```{r}
 #| label: tests_chi2_2
 #| echo: false     
@@ -288,15 +297,16 @@ tab6 <- table(gym$level, gym$gender)
 res_chi2_level <- chisq.test(tab6)
 res_chi2_level
 ```
-
-
-
+<<<<<<< HEAD
+-   De même pour le lien **Niveau / Genre**, la p-valeur est proche de 1 (**p = 0.9936**), ce qui confirme une absence totale de dépendance. La répartition des niveaux d'expérience (débutant, intermédiaire, expert) est statistiquement identique chez les hommes et les femmes
+=======
 
 Nous avons réalisé des tests du Khi-deux d'indépendance pour vérifier si le genre influençait le choix du sport ou le niveau d'expérience.
 
 -   Concernant le lien **Type de sport / Genre**, la p-valeur obtenue est très élevée (**p = 0.7052**). Nous ne rejetons donc pas l'hypothèse nulle d'indépendance. Le choix de la discipline sportive ne dépend pas significativement du genre dans notre échantillon.
 
 -   De même pour le lien **Niveau / Genre**, la p-valeur est proche de 1 (**p = 0.9936**), ce qui confirme une absence totale de dépendance. La répartition des niveaux d'expérience (débutant, intermédiaire, expert) est statistiquement identique chez les hommes et les femmes.
+>>>>>>> 9e800e7fd1aa2101ad94440a424b60544dd3bde7
 
 ------------------------------------------------------------------------
 
@@ -332,7 +342,7 @@ On voit que les p-valeurs sont plus cohérentes car nous avons certaines variabl
 choix=stepAIC(model_logit1,k=log(nrow(gym)),direction="backward")
 ```
 
-Cette procédure nous donne le modèle $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$. 
+Cette procédure nous donne le modèle $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$.
 
 ```{r}
 model.aic <- glm(levelBis ~ fat + duration, data = gym, family = binomial(link = "logit"))
