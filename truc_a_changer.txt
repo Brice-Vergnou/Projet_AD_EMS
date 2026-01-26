@@ -1,0 +1,12 @@
+1 - Noms des parties
+2 - Mise en contexte
+3 - Conclusion 
+4 - Quelles sont var quanti/quali ? Pk ça ?
+5 - Legende fig 9
+6 - "NOUS" à la place de "ON" SVP
+7 - Test d'hypothèse : developper + reformuler, ça suit pas la DA du rapport
+8 - Clustering : Intro, c'est kmeans -> CAH
+9 - Fig 12 : check affichage
+10 - Clustering, Kmeans = CAH, table de contingence + afficher cluster
+11 - SElection de modèle bic (p17) : préciser backward ? Forward ?
+12 - Etude du nv d'xp (p.18) : **La** variable iid ??? + expliciter le faite que logit soit fction de lien
