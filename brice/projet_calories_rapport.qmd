@@ -1,4 +1,3 @@
-
 ---
 title: "Analyse du nombre de calories brûlées"
 author: "Ilias Bouhalla, Chaima Sghir, Brice Vergnou"
@@ -64,7 +63,7 @@ knitr::kable(
 
 On en a quatre : `type`, `level`, `gender`, `freq`. Même si certaines d'entre elles sont données comme numériques, nous préférons les traiter comme variable qualitative car elles se comportent comme des groupes distincts.
 
-La  @fig-prop-type-gender montre la répartition des types d'exercices selon le genre et montre qu'on ne voit pas de différence significative dans la pratique sportive .
+La @fig-prop-type-gender montre la répartition des types d'exercices selon le genre et montre qu'on ne voit pas de différence significative dans la pratique sportive .
 
 ```{r fig-prop-type-gender, fig.cap="Répartition du type d'exercice selon le genre (proportions en colonne).", fig.width=5.5}
 ggplot(data, aes(x = type, fill = gender)) +
@@ -77,9 +76,9 @@ ggplot(data, aes(x = type, fill = gender)) +
 
 ### Distribution de l’âge, du BMI et des calories brûlées
 
-La  @fig-hist-age-bmi-cal illustre la distribution de trois variables importantes :  
-- l’âge des participants,  
-- leur indice de masse corporelle (BMI),  
+La @fig-hist-age-bmi-cal illustre la distribution de trois variables importantes :\
+- l’âge des participants,\
+- leur indice de masse corporelle (BMI),\
 - ainsi qu’un boxplot des calories brûlées.
 
 On voit que pour pouvoir manipuler ces données avec des méthodes comme l'ACP nous devrons plus tard normaliser nos données car celles-ci ne sont pas à la même échelle et ne suivent pas toutes une loi normale.
@@ -105,7 +104,7 @@ grid.arrange(g_age_hist, g_bmi_hist, g_cal_box, ncol = 3)
 
 ## Calories selon le type et le niveau
 
-La  @fig-cal-violin-combine permet de visualiser l’influence du type d’exercice et du niveau.
+La @fig-cal-violin-combine permet de visualiser l’influence du type d’exercice et du niveau.
 
 Les distributions montrent que les calories brûlées varient fortement selon le type d’exercice et le niveau : les pratiquants de niveau élevé ainsi que certains types d’entraînement plus intenses présentent des valeurs médianes plus hautes. La dispersion importante à l’intérieur de chaque groupe suggère toutefois une forte variabilité individuelle. La fréquence d’entraînement apparaît également liée à un accroissement global des calories. Ces observations indiquent que les facteurs qualitatifs influencent bien la dépense énergétique, ce qui justifie de les intégrer dans les modèles explicatifs.
 
@@ -137,13 +136,9 @@ grid.arrange(g_cal_type, g_cal_level, g_cal_freq,  ncol = 3)
 
 ## Corrélations et relations bivariées
 
-
-
-
 Enfin, la @fig-corrplot affiche les corrélations entre 2 paramètres.
 
 La matrice de corrélation révèle des relations attendues : une forte association entre poids, BMI et masse grasse, et une corrélation positive marquée entre durée d’exercice, fréquence cardiaque et calories brûlées. Ces liens suggèrent que plusieurs variables décrivent des informations redondantes, ce qui justifie éventuellement une réduction dimensionnelle (ACP) ou une sélection de variables dans les modèles. On observe aussi des variables quasi indépendantes, utiles pour compléter l’explication du phénomène sans colinéarité excessive.
-
 
 ```{r fig-corrplot, fig.cap="Matrice de corrélation des variables quantitatives."}
 M <- cor(num_vars, use = "pairwise.complete.obs")

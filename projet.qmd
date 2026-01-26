@@ -289,9 +289,6 @@ res_chi2_level <- chisq.test(tab6)
 res_chi2_level
 ```
 
-
-
-
 Nous avons réalisé des tests du Khi-deux d'indépendance pour vérifier si le genre influençait le choix du sport ou le niveau d'expérience.
 
 -   Concernant le lien **Type de sport / Genre**, la p-valeur obtenue est très élevée (**p = 0.7052**). Nous ne rejetons donc pas l'hypothèse nulle d'indépendance. Le choix de la discipline sportive ne dépend pas significativement du genre dans notre échantillon.
@@ -332,7 +329,7 @@ On voit que les p-valeurs sont plus cohérentes car nous avons certaines variabl
 choix=stepAIC(model_logit1,k=log(nrow(gym)),direction="backward")
 ```
 
-Cette procédure nous donne le modèle $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$. 
+Cette procédure nous donne le modèle $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$.
 
 ```{r}
 model.aic <- glm(levelBis ~ fat + duration, data = gym, family = binomial(link = "logit"))

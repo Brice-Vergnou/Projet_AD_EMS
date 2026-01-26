@@ -245,3 +245,4 @@ L'analyse croisée des distributions et de la matrice de confusion révèle que 
 **Conclusion**
 
 Dans une optique de pilotage général et de clarté, nous recommandons de retenir la partition K-Means en 3 classes. Bien que le modèle de mélange soit statistiquement optimal (critère BIC), la division en 7 groupes complexifie l'interprétation sans nécessairement apporter de levier d'action proportionnel pour une segmentation généraliste. La partition en 3 classes capture l'essentiel de la variance (morphologie et intensité) et permet de définir des profils types suffisamment distincts. Le modèle à 7 classes pourra être conservé en tant qu'outil de "second niveau" si un besoin de personnalisation très fine se fait sentir ultérieurement.
+
