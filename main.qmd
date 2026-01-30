@@ -81,6 +81,8 @@ num_vars <- data %>% dplyr::select(where(is.numeric))
 
 # Analyse descriptive
 
+Avant de manipuler les données pour effectuer différents tests, il est important de proprement explorer celles-ci pour avoir une idée générale de ce qu'elles représentent pour que nos tests soient plus précis et utiles.
+
 ```{r head-table, echo=FALSE}
 knitr::kable(
   head(data, 10),
@@ -217,8 +219,6 @@ corrplot(M, method = "ellipse", order = "hclust")
 
 **(£) BILAN ? On garde quoi en quanti, quoi en quali ? - Expliciter les variables (les citer)**
 
-------------------------------------------------------------------------
-
 # Visualisation dans un espace à faible dimension
 
 ## Variables quantitatives
@@ -230,8 +230,6 @@ réduire la dimensionnalité des variables quantitatives tout en
 conservant le maximum d'information.
 
 ```{r}
-#| label: summary_table
-#| tbl-cap: "Résumé statistique des variables du jeu de données Gym"
 #| echo: false
 #| fig-height: 4
 #| fig-width: 4
@@ -244,7 +242,7 @@ summary(gym)
 ```
 (£) CHOISIRE ENTRE :
 
-**Pendant notre analyse descriptive des données, nous avons remarquer la différence d'échelle entre nos différents variables quantitatives (ex : la variable calories varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles). Il est donc essentiel de normaliser les données. Sans normalisation, la variable calories prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données**
+On remarque qu'il est essentiel de normaliser les données, car les variables n’ont pas la même échelle. Par exemple, la variable calories varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles. Sans normalisation, la variable calories prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données
 
 En affichant @summary_table , on remarque qu'il est essentiel de
 normaliser les données, car les variables n’ont pas la même échelle. Par
@@ -256,56 +254,32 @@ biaiserait les résultats et empêcherait une interprétation équilibrée
 des données
 
 ```{r}
-#| label: summary_table2
-#| tbl-cap: "Valeurs propres et pourcentages d'inertie expliquée par les axes"
 #| echo: false
 respca<-PCA(gym,scale.unit=T ,graph=F , quali.sup=c(2,8,11,12))
 # respca$eig
 # sum(respca$eig[,1])
 ```
 
-Choix du nombre de dimensions (Éboulis des valeurs propres) : La
-première étape de l'ACP consiste à déterminer combien d'axes factoriels
-sont nécessaires pour résumer l'information. Nous analysons l'éboulis
-des valeurs propres pour identifier le nombre de dimensions qui
-capturent la majorité de l'inertie (variance) du nuage de données, tout
-en éliminant le "bruit" statistique. **(£) ça fait très Gemini, éboulis ??**
+La première étape de l'ACP consiste à déterminer combien d'axes factoriels sont nécessaires pour résumer l'information. Nous analysons l'éboulis des valeurs propres pour identifier le nombre de dimensions qui capturent la majorité de l'inertie du nuage de données, tout en éliminant le "bruit" statistique.
 
-```{r}
-#| label: summary_table1
-#| fig-cap: "Éboulis des valeurs propres : choix du nombre de dimensions"
+```{r fig-screeplot, fig.cap="Pourcentage de variance expliquée par dimension"}
 #| echo: false
 fviz_eig(respca)
-
 ```
 
-**(£) CHOISIR ENTRE: **
+On constate d'aprés la @fig-screeplot qu’il est possible de conserver uniquement les cinq premières dimensions, car à elles seules, elles expliquent 89.19 % de la variabilité totale des données. Cela signifie qu’elles suffisent à représenter l’essentiel de l’information contenue dans le jeu de données
 
-**Les résultats de l'ACP (@summary_table1), montre une explication de 89.19 % de la variabilité totale des données avec 5 dimensions. Nous considérons alors qu’elles suffisent à représenter l’essentiel de l’information contenue dans nos variables.**
+Une fois les axes retenus, nous devons comprendre leur signification. Pour cela, nous examinons la qualité de représentation (Cos²) des variables initiales sur chaque dimension. Une variable fortement représentée sur un axe contribue majoritairement à sa définition
 
-On constate d'aprés @summary_table1 qu’il est possible de conserver
-uniquement les cinq premières dimensions, car à elles seules, elles
-expliquent 89.19 % de la variabilité totale des données. Cela signifie
-qu’elles suffisent à représenter l’essentiel de l’information contenue
-dans le jeu de données
-
-Qualité de représentation des variables : Une fois les axes retenus,
-nous devons comprendre leur signification. Pour cela, nous examinons la
-qualité de représentation (Cos²) des variables initiales sur chaque
-dimension. Une variable fortement représentée sur un axe contribue
-majoritairement à sa définition
 
 ```{r}
-#| label: summary_table3
-#| fig-cap: "ualité de représentation (Cos²) des variables sur les 5 premiers axes"
 #| echo: false
 respca$var$cos2 
 #respca$var$contrib
 ```
 
-L'analyse de la **qualité de représentation des variables** (basée sur
-le critère du **cos²**) sur les cinq dimensions retenues @summary_table3
-met en évidence la structure suivante :
+L'analyse de la **qualité de représentation des variables** (basée sur le critère du **cos²**) sur les cinq dimensions retenues.
+Cela met en évidence la structure suivante :
 
 -   La **1ère dimension** est principalement caractérisée par les
     variables `fat`, `calories`, `duration` et `water`, qui y sont le
@@ -325,8 +299,10 @@ Structure globale de la population (Nuage des individus) : Nous
 projetons les individus dans le nouvel espace réduit défini par les deux (**£ C'est pas plutot les deux axes principaux plutôt ?**) premières composantes principales. Cette vue d'ensemble permet de
 repérer la topologie générale des données
 
+Nous projetons les individus dans le nouvel espace réduit défini par les deux premières composantes principales. Cette vue d'ensemble permet de repérer la topologie générale des données
+
 ```{r}
-#| label: summary_table4
+#| label: fig-projection
 #| echo: false
 #| fig-cap: "Projection des individus sur le premier plan factoriel (Dim 1 et 2)"
 #| fig-height: 2.5
@@ -337,10 +313,7 @@ fviz_pca_ind(respca,geom="point")
 
 ```
 
-Le graphique n’est pas très lisible et ne permet pas d’interpréter de
-nombreux éléments en détail. Nous observons néanmoins la formation de
-quelques groupes, même si les caractéristiques précises expliquant ces
-regroupements restent difficiles à identifier.
+La @fig-projection n’est pas très lisible et ne permet pas d’interpréter de nombreux éléments en détail. On observe néanmoins la formation de quelques groupes, même si les caractéristiques précises expliquant ces regroupements restent difficiles à identifier.
 
 En colorant les individus selon le genre, le type ou la fréquence,
 certaines tendances apparaissent.
@@ -375,9 +348,7 @@ fviz_pca_ind(respca,
              legend.title = "Type",geom="point")
 ```
 
-Concernant le genre, une distinction est visible principalement sur
-l’axe 2 : les hommes se situent davantage du côté associé à des valeurs
-plus élevées de poids, taille et IMC, contrairement aux femmes.
+Concernant le genre, une distinction est visible principalement sur l’axe 2 de la @fig-pca-groupes : les hommes se situent davantage du côté associé à des valeurs plus élevées de poids, taille et IMC, contrairement aux femmes.
 
 En revanche, aucune tendance claire ne se dégage concernant le type, lesindividus étant répartis de manière trop homogène.
 
@@ -391,8 +362,10 @@ Visualisation des relations entre variables (Cercle des corrélations) :
 Le cercle des corrélations projette les vecteurs des variables
 quantitatives sur le premier plan factoriel
 
+Le cercle des corrélations projette les vecteurs des variables quantitatives sur le premier plan factoriel
+
 ```{r}
-#| label: summary_table8
+#| label: fig-cercle-correlation
 #| echo: false
 #| warning: false
 #| fig-cap: "Projection des variables sur le cercle des coreélation"
@@ -409,16 +382,10 @@ grid.arrange(g2,g3,ncol=2, widths = c(2,3.6))
 grid.arrange(g2,g1,ncol=2, widths = c(2,3.6))
 ```
 
-(£) CHOISIR ENTRE : 
+Dans le cercle de corrélation (@fig-cercle-correlation), on observe que les variables *fat* d’une part, et *calories*, *duration*, etc. d’autre part, contribuent toutes à la formation de la première dimension, mais dans des directions opposées, ce qui est cohérent avec leur relation inverse.
 
-**L'examen du cercle des corrélations (£ METTRE LA FIGURE) révèle que la variable fat d’une part, et les variables calories, duration, etc. d’autre part, participent fortement à la construction de la première dimension. Leur projection dans des directions opposées illustre la corrélation négative existant entre ces indicateurs**
+Par ailleurs, les variables *poids*, *la consommation d’eau* et *taille* influencent principalement la construction du deuxième axe factoriel
 
-Dans le cercle de corrélation, on observe que les variables *fat* d’une
-part, et *calories*, *duration*, etc. d’autre part, contribuent toutes à
-la formation de la première dimension, mais dans des directions
-opposées, ce qui est cohérent avec leur relation inverse.
-
-Par ailleurs, les variables `weight` (poids), `water` (consommation d’eau) et `height` (taille) influencent principalement la construction du deuxième axe factoriel.
 
 ## Variables qualitatives
 
@@ -595,7 +562,6 @@ l'origine indique une contribution marginale à la dispersion globale.
 Cette configuration confirme visuellement les résultats des tests
 statistiques précédents : la différenciation des individus ne repose pas leur genre ou leurs préférences d'activité, mais est structurée quasi-exclusivement par leur dynamique d'entraînement (couple Fréquence-Niveau).
 
-------------------------------------------------------------------------
 
 # Test d'hypothèses
 
@@ -657,7 +623,7 @@ brûlées diffère significativement entre les hommes et les femmes
 
 
 
-## Dépendance entre variables
+## Dépendance entre variables
 
 ```{r}
 #| label: test_wilcoxon
@@ -773,25 +739,6 @@ res_chi2_level <- chisq.test(tab6)
 res_chi2_level
 ```
 
--   De même pour le lien **Niveau / Genre**, la p-valeur est proche de 1
-    (**p = 0.9936**), ce qui confirme une absence totale de dépendance.
-    La répartition des niveaux d'expérience (débutant, intermédiaire,
-    expert) est statistiquement identique chez les hommes et les femmes.
-
-------------------------------------------------------------------------
-
----
-format: pdf
-editor: visual
-lang: fr
-crossref:
-  fig-title: Figure
-  fig-prefix: Figure
-execute: 
-  echo: false
-  warning: false
-  message: false
----
 
 # Clustering des individus
 
@@ -1406,7 +1353,7 @@ model_logit <- glm(levelBis ~ ., data = gym, family = binomial(link = "logit"))
 summary(model_logit)
 ```
 
-En analysant les p-valeurs, nous constatons qu'aucune des variables n'est significative, ce qui est étrange car l'analyse descriptive montre que beaucoup de variables sont liées entre elles. En regardant de plus près, nous remarquons que l'estimation et l'écart-type des fréquences est très important par rapport aux autres variables. Nous allons donc faire un modèle sans cette variable.
+En regardant les p-valeurs, on constate qu'aucune des variables n'est significative, ce qui est étrange car l'analyse descriptive montre que beaucoup de variables sont liées entre elles. En regardant de plus près, on constate que l'estimation et l'écart-type des fréquences est très important par rapport aux autres variables. Nous allons donc faire un modèle sans cette variable car celle-ci à l'air d'écraser les autres sans pour autant apporter grand chose.
 
 ```{r}
 #| label: logistic_model_2
@@ -1417,21 +1364,22 @@ model_logit1<- glm(levelBis ~ ., data = gym, family = binomial(link = "logit"))
 summary(model_logit1)
 ```
 
-Nous observons désormais des p-valeurs plus cohérentes. En effet, nous avons certaines variables qui sont explicatives et d'autres non. Pour faire le tri dans ces variables, nous allons procéder à une sélection de modèle par critère BIC.
+On voit que les p-valeurs sont plus cohérentes car nous avons certaines variables qui sont explicatives et d'autres non. Nous avons beaucoup de variables ce qui peut mener à de l'overfitting. Pour faire le tri dans ces variables, nous allons procéder à une sélection de modèle par critère AIC en backwards. Celui-ci va partir du modèle quasi-complet (modèle complet privé des fréquences) et progressivement retirer les variables explicatives qui minimisent le moins ce critère.
 
-```{r fig-bic-logit, fig.width=8, fig.height=5, fig.cap="Sélection exhaustive des variables explicatives par le critère BIC pour le modèle logistique."}
-      
-regfit_logit <- regsubsets(
-  levelBis ~ .,
-  data = gym,
-  nvmax = 15,
-  method = "exhaustive"
-)
-plot(regfit_logit, scale = "bic")
+```{r}
+#| results: hide
+#| message: false
+#| warning: false
+choix=stepAIC(model_logit1,k=log(nrow(gym)),direction="backward")
 ```
 
-Cette procédure nous donne le modèle
-$Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$.
+Après éxécution de cet algorithme, nous obtenons comme meilleur modèle le modèle suivant :
+
+```{r}
+formula(choix)
+```
+
+Nous pouvons donc supposer que la meilleure modélisation est $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$. Cependant, il nous faut quand même valider ce modèle pour vérifier qu'il nous donne les mêmes information que le modèle quasi-complet.
 
 ```{r}
 model.bic <- glm(levelBis ~ fat + duration, data = gym, family = binomial(link = "logit"))
