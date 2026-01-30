@@ -1,12 +1,15 @@
-1 - Noms des parties
+1 - Noms des parties 
 2 - Mise en contexte
 3 - Conclusion 
 4 - Quelles sont var quanti/quali ? Pk ça ?
 5 - Legende fig 9
-6 - "NOUS" à la place de "ON" SVP
-7 - Test d'hypothèse : developper + reformuler, ça suit pas la DA du rapport
-8 - Clustering : Intro, c'est kmeans -> CAH
+6 - "NOUS" à la place de "ON" SVP (DONE)
+7 - Test d'hypothèse : developper + reformuler, ça suit pas la DA du rapport (DONE)
+8 - Clustering : Intro, c'est kmeans -> CAH (DONE)
 9 - Fig 12 : check affichage
-10 - Clustering, Kmeans = CAH, table de contingence + afficher cluster
+10 - Clustering, Kmeans = CAH, table de contingence + afficher cluster (DONE)
 11 - SElection de modèle bic (p17) : préciser backward ? Forward ?
 12 - Etude du nv d'xp (p.18) : **La** variable iid ??? + expliciter le faite que logit soit fction de lien
+13 -  Changer les blocs R comme ça - c'est du Gemini ?? ```{r fig-cal-violin-combine, fig.cap="Calories brûlées selon le type d'exercice (à gauche) et le niveau (à droite).", fig.width=6, fig.height=3}
+14 - FAIRE DES PARAGRAPHES (DONE)
+
