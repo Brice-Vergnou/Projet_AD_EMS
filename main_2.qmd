@@ -2,7 +2,7 @@
 title: "Analyse du nombre de calories brûlées"
 author: "Ilias Bouhalla, Chaima Sghir, Brice Vergnou"
 format: 
-  pdf:
+  pdf: default
     toc: true
     number-sections: true
 lang: fr
@@ -56,17 +56,7 @@ library(leaps)
 
 # Introduction
 
-Ce projet a pour objectif d’analyser les facteurs influençant la dépense
-énergétique lors de séances sportives à partir d’un jeu de données
-décrivant les caractéristiques physiques, physiologiques et les
-pratiques d’adhérents d’une salle de sport. Après une analyse
-descriptive et exploratoire du jeu de données, nous mobilisons des tests
-d’hypothèses, des méthodes de clustering et différentes approches de
-modélisation statistique afin d’étudier le nombre de calories brûlées et
-le niveau d’expérience des pratiquants. Une attention particulière est
-portée à la sélection de variables, à l’interprétation des modèles et à
-l’analyse des résidus, dans une logique d’aller-retour entre exploration
-et modélisation.
+Ce projet a pour objectif d’analyser les facteurs influençant la dépense énergétique lors de séances sportives à partir d’un jeu de données décrivant les caractéristiques physiques, physiologiques et les pratiques d’adhérents d’une salle de sport. Après une analyse descriptive et exploratoire du jeu de données, nous mobilisons des tests d’hypothèses, des méthodes de clustering et différentes approches de modélisation statistique afin d’étudier le nombre de calories brûlées et le niveau d’expérience des pratiquants. Une attention particulière est portée à la sélection de variables, à l’interprétation des modèles et à l’analyse des résidus, dans une logique d’aller-retour entre exploration et modélisation.
 
 ```{r data-import}
 data <- read.csv("./DataGym-projet4modIA-2526.csv", sep = " ")
@@ -91,19 +81,13 @@ knitr::kable(
 
 ## Variables qualitatives
 
-Nous identifions quatre variables qualitatives : `type`, `level`,
-`gender`, `freq`. Même si certaines d'entre elles (`level`, `freq)` sont
-données comme numériques, nous préférons les traiter comme variable
-qualitative car elles représentent des niveaux hiérarchiques distincts
-plutôt que des mesures continues.
+Nous identifions quatre variables qualitatives : `type`, `level`, `gender`, `freq`. Même si certaines d'entre elles (`level`, `freq)` sont données comme numériques, nous préférons les traiter comme variable qualitative car elles représentent des niveaux hiérarchiques distincts plutôt que des mesures continues.
 
 (£) CHOSIRE ENTRE LES DEUX :
 
 **Une première interrogation porte sur l'influence potentielle du genre sur le choix de l'activité. La @fig-prop-type-gender illustre la répartition des types d'exercices selon le sexe. Nous pouvons observer une répartition homogène, sans disparité apparente.**
 
-La @fig-prop-type-gender illustre la distribution des types d'exercices
-en fonction du genre. Nous observons une répartitions homogène des
-pratiques, sans disparité apparente entre hommes et femmes
+La @fig-prop-type-gender illustre la distribution des types d'exercices en fonction du genre. Nous observons une répartitions homogène des pratiques, sans disparité apparente entre hommes et femmes
 
 ```{r fig-prop-type-gender, fig.cap="Répartition du type d'exercice selon le genre (proportions en colonne).", fig.width=5.5}
 ggplot(data, aes(x = type, fill = gender)) +
@@ -116,22 +100,16 @@ ggplot(data, aes(x = type, fill = gender)) +
 
 ### Distribution de l’âge, du BMI et des calories brûlées
 
-La @fig-hist-age-bmi-cal illustre la distribution de trois variables
-importantes :\
+La @fig-hist-age-bmi-cal illustre la distribution de trois variables importantes :\
 - l’âge des participants,\
 - leur indice de masse corporelle (BMI),\
 - ainsi qu’un boxplot des calories brûlées.
 
 (£) CHOISIR ENTRE LES DEUX :
 
-**Nous observons sur la @fig-hist-age-bmi-cal une difference d'échelle entre nos variables
-(ex : calories prend de très grande valeur comparé à la taille). Afin
-de traiter ces données avec des méthodes de type ACP (Analyse en
-composante principales), nous devrons plus tard normaliser nos données.**
+**Nous observons sur la @fig-hist-age-bmi-cal une difference d'échelle entre nos variables (ex : calories prend de très grande valeur comparé à la taille). Afin de traiter ces données avec des méthodes de type ACP (Analyse en composante principales), nous devrons plus tard normaliser nos données.**
 
-On voit que pour pouvoir manipuler ces données avec des méthodes comme
-l'ACP nous devrons plus tard normaliser nos données car celles-ci ne
-sont pas à la même échelle et ne suivent pas toutes une loi normale.
+On voit que pour pouvoir manipuler ces données avec des méthodes comme l'ACP nous devrons plus tard normaliser nos données car celles-ci ne sont pas à la même échelle et ne suivent pas toutes une loi normale.
 
 ```{r fig-hist-age-bmi-cal, fig.cap="Histogrammes de l'âge et du BMI, et boxplot des calories brûlées."}
 g_age_hist <- ggplot(data, aes(x = age)) +
@@ -154,22 +132,13 @@ grid.arrange(g_age_hist, g_bmi_hist, g_cal_box, ncol = 3)
 
 ## Calories selon le type et le niveau
 
-La @fig-cal-violin-combine permet de visualiser l’influence du type
-d’exercice et du niveau.
+La @fig-cal-violin-combine permet de visualiser l’influence du type d’exercice et du niveau.
 
 (£) CHOSIRE ENTRE :
 
 **L'examen des distributions (@fig-cal-violin-combine) met en évidence une hétérogénéité marquée de la dépense calorique selon le profil de la séance. Les exercices à haute intensité et les niveaux élevés sont associés à des valeurs médianes nettement supérieures. Néanmoins, la forte dispersion intra-classe témoigne d'une variabilité individuelle importante qui ne peut être résumée par ces seules catégories. Par ailleurs, une tendance haussière se dessine avec la fréquence d'entraînement. Ces constats légitiment l'inclusion de ces variables qualitatives (`type`, `freq`, `level`) comme facteurs explicatifs dans la modélisation ultérieure.**
 
-Les distributions montrent que les calories brûlées varient fortement
-selon le type d’exercice et le niveau : les pratiquants de niveau élevé
-ainsi que certains types d’entraînement plus intenses présentent des
-valeurs médianes plus hautes. La dispersion importante à l’intérieur de
-chaque groupe suggère toutefois une forte variabilité individuelle. La
-fréquence d’entraînement apparaît également liée à un accroissement
-global des calories. Ces observations indiquent que les facteurs
-qualitatifs influencent bien la dépense énergétique, ce qui justifie de
-les intégrer dans les modèles explicatifs.
+Les distributions montrent que les calories brûlées varient fortement selon le type d’exercice et le niveau : les pratiquants de niveau élevé ainsi que certains types d’entraînement plus intenses présentent des valeurs médianes plus hautes. La dispersion importante à l’intérieur de chaque groupe suggère toutefois une forte variabilité individuelle. La fréquence d’entraînement apparaît également liée à un accroissement global des calories. Ces observations indiquent que les facteurs qualitatifs influencent bien la dépense énergétique, ce qui justifie de les intégrer dans les modèles explicatifs.
 
 ```{r fig-cal-violin-combine, fig.cap="Calories brûlées selon le type d'exercice (à gauche) et le niveau (à droite).", fig.width=6, fig.height=3}
 g_cal_type <- ggplot(data, aes(x = type, y = calories, fill = type)) +
@@ -201,14 +170,7 @@ grid.arrange(g_cal_type, g_cal_level, g_cal_freq,  ncol = 3)
 
 Enfin, la @fig-corrplot affiche les corrélations entre 2 paramètres.
 
-La matrice de corrélation révèle des relations attendues : une forte
-association entre poids, BMI et masse grasse, et une corrélation
-positive marquée entre durée d’exercice, fréquence cardiaque et calories
-brûlées. Ces liens suggèrent que plusieurs variables décrivent des
-informations redondantes, ce qui justifie une réduction
-dimensionnelle (ACP) ou une sélection de variables dans les modèles. On
-observe aussi des variables quasi indépendantes, (£ bizarre la suite de la phrase) : utiles pour compléter
-l’explication du phénomène sans colinéarité excessive.
+La matrice de corrélation révèle des relations attendues : une forte association entre poids, BMI et masse grasse, et une corrélation positive marquée entre durée d’exercice, fréquence cardiaque et calories brûlées. Ces liens suggèrent que plusieurs variables décrivent des informations redondantes, ce qui justifie une réduction dimensionnelle (ACP) ou une sélection de variables dans les modèles. On observe aussi des variables quasi indépendantes, (£ bizarre la suite de la phrase) : utiles pour compléter l’explication du phénomène sans colinéarité excessive.
 
 ```{r fig-corrplot, fig.cap="Matrice de corrélation des variables quantitatives."}
 M <- cor(num_vars, use = "pairwise.complete.obs")
@@ -223,11 +185,7 @@ corrplot(M, method = "ellipse", order = "hclust")
 
 ## Variables quantitatives
 
-Afin d'explorer la structure globale du jeu de données et d'identifier
-d'éventuels profils types parmi les individus, nous réalisons une
-Analyse en Composantes Principales (ACP) sur nos variables quantitatives. Cette méthode nous permet de
-réduire la dimensionnalité des variables quantitatives tout en
-conservant le maximum d'information.
+Afin d'explorer la structure globale du jeu de données et d'identifier d'éventuels profils types parmi les individus, nous réalisons une Analyse en Composantes Principales (ACP) sur nos variables quantitatives. Cette méthode nous permet de réduire la dimensionnalité des variables quantitatives tout en conservant le maximum d'information.
 
 ```{r}
 #| label: summary_table
@@ -242,18 +200,12 @@ gym$freq=as.factor(gym$freq) #pour avoir le graphe mais cette ligne en commentai
 summary(gym)
 
 ```
+
 (£) CHOISIRE ENTRE :
 
 **Pendant notre analyse descriptive des données, nous avons remarquer la différence d'échelle entre nos différents variables quantitatives (ex : la variable calories varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles). Il est donc essentiel de normaliser les données. Sans normalisation, la variable calories prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données**
 
-En affichant @summary_table , on remarque qu'il est essentiel de
-normaliser les données, car les variables n’ont pas la même échelle. Par
-exemple, la variable calories varie entre 303 et 1783, tandis que les
-autres variables quantitatives présentent des valeurs beaucoup plus
-faibles. Sans normalisation, la variable calories prendrait une
-importance disproportionnée et influencerait fortement l’analyse, ce qui
-biaiserait les résultats et empêcherait une interprétation équilibrée
-des données
+En affichant @summary_table , on remarque qu'il est essentiel de normaliser les données, car les variables n’ont pas la même échelle. Par exemple, la variable calories varie entre 303 et 1783, tandis que les autres variables quantitatives présentent des valeurs beaucoup plus faibles. Sans normalisation, la variable calories prendrait une importance disproportionnée et influencerait fortement l’analyse, ce qui biaiserait les résultats et empêcherait une interprétation équilibrée des données
 
 ```{r}
 #| label: summary_table2
@@ -264,12 +216,7 @@ respca<-PCA(gym,scale.unit=T ,graph=F , quali.sup=c(2,8,11,12))
 # sum(respca$eig[,1])
 ```
 
-Choix du nombre de dimensions (Éboulis des valeurs propres) : La
-première étape de l'ACP consiste à déterminer combien d'axes factoriels
-sont nécessaires pour résumer l'information. Nous analysons l'éboulis
-des valeurs propres pour identifier le nombre de dimensions qui
-capturent la majorité de l'inertie (variance) du nuage de données, tout
-en éliminant le "bruit" statistique. **(£) ça fait très Gemini, éboulis ??**
+Choix du nombre de dimensions (Éboulis des valeurs propres) : La première étape de l'ACP consiste à déterminer combien d'axes factoriels sont nécessaires pour résumer l'information. Nous analysons l'éboulis des valeurs propres pour identifier le nombre de dimensions qui capturent la majorité de l'inertie (variance) du nuage de données, tout en éliminant le "bruit" statistique. **(£) ça fait très Gemini, éboulis ??**
 
 ```{r}
 #| label: summary_table1
@@ -279,21 +226,13 @@ fviz_eig(respca)
 
 ```
 
-**(£) CHOISIR ENTRE: **
+**(£) CHOISIR ENTRE:**
 
 **Les résultats de l'ACP (@summary_table1), montre une explication de 89.19 % de la variabilité totale des données avec 5 dimensions. Nous considérons alors qu’elles suffisent à représenter l’essentiel de l’information contenue dans nos variables.**
 
-On constate d'aprés @summary_table1 qu’il est possible de conserver
-uniquement les cinq premières dimensions, car à elles seules, elles
-expliquent 89.19 % de la variabilité totale des données. Cela signifie
-qu’elles suffisent à représenter l’essentiel de l’information contenue
-dans le jeu de données
+On constate d'aprés @summary_table1 qu’il est possible de conserver uniquement les cinq premières dimensions, car à elles seules, elles expliquent 89.19 % de la variabilité totale des données. Cela signifie qu’elles suffisent à représenter l’essentiel de l’information contenue dans le jeu de données
 
-Qualité de représentation des variables : Une fois les axes retenus,
-nous devons comprendre leur signification. Pour cela, nous examinons la
-qualité de représentation (Cos²) des variables initiales sur chaque
-dimension. Une variable fortement représentée sur un axe contribue
-majoritairement à sa définition
+Qualité de représentation des variables : Une fois les axes retenus, nous devons comprendre leur signification. Pour cela, nous examinons la qualité de représentation (Cos²) des variables initiales sur chaque dimension. Une variable fortement représentée sur un axe contribue majoritairement à sa définition
 
 ```{r}
 #| label: summary_table3
@@ -303,27 +242,19 @@ respca$var$cos2
 #respca$var$contrib
 ```
 
-L'analyse de la **qualité de représentation des variables** (basée sur
-le critère du **cos²**) sur les cinq dimensions retenues @summary_table3
-met en évidence la structure suivante :
+L'analyse de la **qualité de représentation des variables** (basée sur le critère du **cos²**) sur les cinq dimensions retenues @summary_table3 met en évidence la structure suivante :
 
--   La **1ère dimension** est principalement caractérisée par les
-    variables `fat`, `calories`, `duration` et `water`, qui y sont le
-    mieux représentées.
+-   La **1ère dimension** est principalement caractérisée par les variables `fat`, `calories`, `duration` et `water`, qui y sont le mieux représentées.
 
--   La **2ème dimension** est dominée par les variables de corpulence
-    (`weight` et `bmi`).
+-   La **2ème dimension** est dominée par les variables de corpulence (`weight` et `bmi`).
 
 -   La **3ème dimension** est essentiellement structurée par la variable `height`.
 
--   Enfin, alors que la **4ème dimension** ne semble capturer aucune
-    contribution significative de la part des variables, l'âge (`age`) et la **fréquence cardiaque moyenne** (`bpm_ave`) sont les variables les plus corrélées à la **5ème dimension**.
-    
+-   Enfin, alors que la **4ème dimension** ne semble capturer aucune contribution significative de la part des variables, l'âge (`age`) et la **fréquence cardiaque moyenne** (`bpm_ave`) sont les variables les plus corrélées à la **5ème dimension**.
+
 **(£) C'était très geminiesque ça mdrr**
 
-Structure globale de la population (Nuage des individus) : Nous
-projetons les individus dans le nouvel espace réduit défini par les deux (**£ C'est pas plutot les deux axes principaux plutôt ?**) premières composantes principales. Cette vue d'ensemble permet de
-repérer la topologie générale des données
+Structure globale de la population (Nuage des individus) : Nous projetons les individus dans le nouvel espace réduit défini par les deux (**£ C'est pas plutot les deux axes principaux plutôt ?**) premières composantes principales. Cette vue d'ensemble permet de repérer la topologie générale des données
 
 ```{r}
 #| label: summary_table4
@@ -337,13 +268,9 @@ fviz_pca_ind(respca,geom="point")
 
 ```
 
-Le graphique n’est pas très lisible et ne permet pas d’interpréter de
-nombreux éléments en détail. Nous observons néanmoins la formation de
-quelques groupes, même si les caractéristiques précises expliquant ces
-regroupements restent difficiles à identifier.
+Le graphique n’est pas très lisible et ne permet pas d’interpréter de nombreux éléments en détail. Nous observons néanmoins la formation de quelques groupes, même si les caractéristiques précises expliquant ces regroupements restent difficiles à identifier.
 
-En colorant les individus selon le genre, le type ou la fréquence,
-certaines tendances apparaissent.
+En colorant les individus selon le genre, le type ou la fréquence, certaines tendances apparaissent.
 
 ```{r}
 #| label: fig-pca-groupes
@@ -375,21 +302,13 @@ fviz_pca_ind(respca,
              legend.title = "Type",geom="point")
 ```
 
-Concernant le genre, une distinction est visible principalement sur
-l’axe 2 : les hommes se situent davantage du côté associé à des valeurs
-plus élevées de poids, taille et IMC, contrairement aux femmes.
+Concernant le genre, une distinction est visible principalement sur l’axe 2 : les hommes se situent davantage du côté associé à des valeurs plus élevées de poids, taille et IMC, contrairement aux femmes.
 
 En revanche, aucune tendance claire ne se dégage concernant le type, lesindividus étant répartis de manière trop homogène.
 
-Pour la fréquence, nous observons qu’elle influence surtout l’axe 1 : plus
-on se déplace vers la droite, plus la fréquence augmente. Cela est
-cohérent avec le cercle de corrélation, où l’axe 1 est associé à un
-nombre plus élevé de calories brûlées et à une pratique plus régulière, ce qui reflète logiquement une fréquence d’entraînement plus
-importante
+Pour la fréquence, nous observons qu’elle influence surtout l’axe 1 : plus on se déplace vers la droite, plus la fréquence augmente. Cela est cohérent avec le cercle de corrélation, où l’axe 1 est associé à un nombre plus élevé de calories brûlées et à une pratique plus régulière, ce qui reflète logiquement une fréquence d’entraînement plus importante
 
-Visualisation des relations entre variables (Cercle des corrélations) :
-Le cercle des corrélations projette les vecteurs des variables
-quantitatives sur le premier plan factoriel
+Visualisation des relations entre variables (Cercle des corrélations) : Le cercle des corrélations projette les vecteurs des variables quantitatives sur le premier plan factoriel
 
 ```{r}
 #| label: summary_table8
@@ -409,14 +328,11 @@ grid.arrange(g2,g3,ncol=2, widths = c(2,3.6))
 grid.arrange(g2,g1,ncol=2, widths = c(2,3.6))
 ```
 
-(£) CHOISIR ENTRE : 
+(£) CHOISIR ENTRE :
 
 **L'examen du cercle des corrélations (£ METTRE LA FIGURE) révèle que la variable fat d’une part, et les variables calories, duration, etc. d’autre part, participent fortement à la construction de la première dimension. Leur projection dans des directions opposées illustre la corrélation négative existant entre ces indicateurs**
 
-Dans le cercle de corrélation, on observe que les variables *fat* d’une
-part, et *calories*, *duration*, etc. d’autre part, contribuent toutes à
-la formation de la première dimension, mais dans des directions
-opposées, ce qui est cohérent avec leur relation inverse.
+Dans le cercle de corrélation, on observe que les variables *fat* d’une part, et *calories*, *duration*, etc. d’autre part, contribuent toutes à la formation de la première dimension, mais dans des directions opposées, ce qui est cohérent avec leur relation inverse.
 
 Par ailleurs, les variables `weight` (poids), `water` (consommation d’eau) et `height` (taille) influencent principalement la construction du deuxième axe factoriel.
 
@@ -436,11 +352,7 @@ test <- chisq.test(tab)
 test
 ```
 
-Afin de légitimer la projection des individus dans un espace factoriel
-réduit, il convient préalablement de vérifier l'existence de liaisons
-statistiques entre les variables qualitatives. Nous avons pour cela
-réalisé des tests du Chi-deux d'indépendance de Pearson dont les
-p-valeurs sont reportées dans la @tbl-chi2-pearson.
+Afin de légitimer la projection des individus dans un espace factoriel réduit, il convient préalablement de vérifier l'existence de liaisons statistiques entre les variables qualitatives. Nous avons pour cela réalisé des tests du Chi-deux d'indépendance de Pearson dont les p-valeurs sont reportées dans la @tbl-chi2-pearson.
 
 ```{r}
 #| warning: false
@@ -467,10 +379,7 @@ library(knitr)
 kable(round(pval_matrix, 5))
 ```
 
-Au seuil de signification $\alpha = 5\%$, l'hypothèse d'indépendance ne
-peut être rejetée pour les croisements impliquant la variable Genre
-(croisée avec Type, Fréquence et Niveau), ainsi que pour le couple
-Type-Fréquence. Ces résultats confirment les statistiques descriptives : le genre n'est pas un facteur discriminant et n'influence ni la pratique ni la performance. En revanche, une dépendance significative est mise en évidence entre le Niveau et la Fréquence (rejet de l'hypothèse d'indépendance), validant la pertinence d'une analyse factorielle ciblée sur ces deux variables.
+Au seuil de signification $\alpha = 5\%$, l'hypothèse d'indépendance ne peut être rejetée pour les croisements impliquant la variable Genre (croisée avec Type, Fréquence et Niveau), ainsi que pour le couple Type-Fréquence. Ces résultats confirment les statistiques descriptives : le genre n'est pas un facteur discriminant et n'influence ni la pratique ni la performance. En revanche, une dépendance significative est mise en évidence entre le Niveau et la Fréquence (rejet de l'hypothèse d'indépendance), validant la pertinence d'une analyse factorielle ciblée sur ces deux variables.
 
 ```{r}
 #| warning: false
@@ -534,17 +443,7 @@ fviz_ca_biplot(resCA_fl, repel = TRUE, title = "CA : Alignement Freq - Level")
 
 ```
 
-L’analyse dimensionnelle (voir @fig-freq-level) révèle une structure
-expliquant la totalité de l’information (100 %), dominée à 68 % par un
-premier axe traduisant l’intensité de la pratique. Cet axe horizontal
-ordonne les individus selon une progression linéaire, opposant les
-valeurs faibles à gauche aux valeurs fortes à droite, tandis que le
-second axe (32 %) discrimine les profils selon leur degré de modération
-(opposition extrême/moyen). L’étude des proximités confirme une
-corrélation directe et quasi parfaite : les débutants (Niveau 1) sont
-fortement associés aux fréquences faibles (2), alors que les niveaux
-experts (3) se regroupent avec les fréquences d'entraînement les plus
-élevées (5). Mathématiquement, ces résultats démontrent que la fréquence d'entraînement est le déterminant principal du niveau.
+L’analyse dimensionnelle (voir @fig-freq-level) révèle une structure expliquant la totalité de l’information (100 %), dominée à 68 % par un premier axe traduisant l’intensité de la pratique. Cet axe horizontal ordonne les individus selon une progression linéaire, opposant les valeurs faibles à gauche aux valeurs fortes à droite, tandis que le second axe (32 %) discrimine les profils selon leur degré de modération (opposition extrême/moyen). L’étude des proximités confirme une corrélation directe et quasi parfaite : les débutants (Niveau 1) sont fortement associés aux fréquences faibles (2), alors que les niveaux experts (3) se regroupent avec les fréquences d'entraînement les plus élevées (5). Mathématiquement, ces résultats démontrent que la fréquence d'entraînement est le déterminant principal du niveau.
 
 ```{r}
 #| warning: false
@@ -586,14 +485,9 @@ fviz_mca_var(resMCA, repel = TRUE, col.var = "cos2", gradient.cols = c("#00AFBB"
 
 ```
 
-Une Analyse des Correspondances Multiples a été réalisée sur l'ensemble
-des quatre variables qualitatives afin d'identifier la structure globale des données. La projection des différentes modalités sur le premier plan factorielle (@fig-mca-var) met en évidence une forte hiérarchie dans les contributions : les variables de niveau et de fréquence, projetées loin de l'origine, captent la majeure partie de l'inertie et structurent exclusivement les axes factoriels.
+Une Analyse des Correspondances Multiples a été réalisée sur l'ensemble des quatre variables qualitatives afin d'identifier la structure globale des données. La projection des différentes modalités sur le premier plan factorielle (@fig-mca-var) met en évidence une forte hiérarchie dans les contributions : les variables de niveau et de fréquence, projetées loin de l'origine, captent la majeure partie de l'inertie et structurent exclusivement les axes factoriels.
 
-À l'inverse, les modalités liées au genre et au type de sport se
-concentrent autour du centre de gravité du nuage. Cette proximité avec
-l'origine indique une contribution marginale à la dispersion globale.
-Cette configuration confirme visuellement les résultats des tests
-statistiques précédents : la différenciation des individus ne repose pas leur genre ou leurs préférences d'activité, mais est structurée quasi-exclusivement par leur dynamique d'entraînement (couple Fréquence-Niveau).
+À l'inverse, les modalités liées au genre et au type de sport se concentrent autour du centre de gravité du nuage. Cette proximité avec l'origine indique une contribution marginale à la dispersion globale. Cette configuration confirme visuellement les résultats des tests statistiques précédents : la différenciation des individus ne repose pas leur genre ou leurs préférences d'activité, mais est structurée quasi-exclusivement par leur dynamique d'entraînement (couple Fréquence-Niveau).
 
 ------------------------------------------------------------------------
 
@@ -601,13 +495,11 @@ statistiques précédents : la différenciation des individus ne repose pas leur
 
 ## Test d'adéquation du nombe de calories brulées à la loi normale
 
-(£) CHOISIR ENTRE : 
+(£) CHOISIR ENTRE :
 
 **Avant de procéder à la comparaison des moyennes de dépense énergétique, nous examinons l'hypothèse de normalité de la variable calories. Cette étape est déterminante pour orienter le choix entre des méthodes paramétriques (fondées sur la moyenne) et des méthodes robustes fondées sur les rangs (test non paramétriques).**
 
-Vérification de la normalité de la variable cible : Avant d'effectuer
-des tests de comparaison de moyennes sur la variable calories, nous
-devons vérifier si celle-ci suit une distribution normale
+Vérification de la normalité de la variable cible : Avant d'effectuer des tests de comparaison de moyennes sur la variable calories, nous devons vérifier si celle-ci suit une distribution normale
 
 ```{r}
 #| echo: false     
@@ -618,15 +510,11 @@ lillie.test(gym$calories)
 
 ```
 
-(£) CHOISIR ENTRE : 
+(£) CHOISIR ENTRE :
 
-**Nous avons d'abord effectué un test de Kolmogorov-Smirnov (correction de Lilliefors). Celui-ci renvoie une p-valeur de 0,0633. Bien que l'hypothèse nulle ($H_0$) de normalité ne soit pas rejetée au seuil $\alpha = 5\%$, ce résultat s'avère fragile au seuil $\alpha = 10\%$. Pour lever l'ambiguïté, nous avons procédé au test de Shapiro-Wilk, plus puissant pour détecter les écarts à la normalité.**
+**Nous avons d'abord effectué un test de Kolmogorov-Smirnov (correction de Lilliefors). Celui-ci renvoie une p-valeur de 0,0633. Bien que l'hypothèse nulle (**$H_0$) de normalité ne soit pas rejetée au seuil $\alpha = 5\%$, ce résultat s'avère fragile au seuil $\alpha = 10\%$. Pour lever l'ambiguïté, nous avons procédé au test de Shapiro-Wilk, plus puissant pour détecter les écarts à la normalité.
 
-On a commencé par faire un test de normalité de Kolmogorov-Smirnov (de
-Lilliefors) là on trouve une p-valeur de 0.0633 ce qui est limite
-eneffet on rejettera si on prend un test à niveau 5% on acceptera
-l'hypothèse hors pour un test à niveau 10% on rejettera l'hypothèse donc
-on a décidé de refaire un autre test de Shapiro-Wilk
+On a commencé par faire un test de normalité de Kolmogorov-Smirnov (de Lilliefors) là on trouve une p-valeur de 0.0633 ce qui est limite eneffet on rejettera si on prend un test à niveau 5% on acceptera l'hypothèse hors pour un test à niveau 10% on rejettera l'hypothèse donc on a décidé de refaire un autre test de Shapiro-Wilk
 
 ```{r}
 #| echo: false     
@@ -637,25 +525,19 @@ shapiro.test(gym$calories)
 
 ```
 
-(£) CHOISIR ENTRE : 
+(£) CHOISIR ENTRE :
 
-**La p-valeur obtenue ($p = 2,982 \times 10^{-5}$) étant largement inférieure au seuil de 5%, nous rejetons l'hypothèse nulle. La variable calories ne suit pas une loi normale, ce qui impose l'utilisation de tests non paramétriques pour la suite de l'étude.**
+**La p-valeur obtenue (**$p = 2,982 \times 10^{-5}$) étant largement inférieure au seuil de 5%, nous rejetons l'hypothèse nulle. La variable calories ne suit pas une loi normale, ce qui impose l'utilisation de tests non paramétriques pour la suite de l'étude.
 
-Avec le test de Shapiro-Wilk on trouve une p-valeur de 2.982e-0.5 qui
-est trés faible donc en conclusion on a rejetté l'hypothèse
+Avec le test de Shapiro-Wilk on trouve une p-valeur de 2.982e-0.5 qui est trés faible donc en conclusion on a rejetté l'hypothèse
 
 La variable calories brûlées ne suit pas une loi normale
 
-(£) CHOISIR ENTRE : 
+(£) CHOISIR ENTRE :
 
-**La condition de normalité n'étant pas respectée, nous appliquons le test de Wilcoxon-Mann-Whitney (test non paramétrique de comparaison des rangs) pour tester l'influence du genre sur la dépense énergétique.$H_0$ : Les distributions de calories sont identiques pour les deux sexes.$H_1$ : Il existe un décalage significatif entre les distributions.**
+**La condition de normalité n'étant pas respectée, nous appliquons le test de Wilcoxon-Mann-Whitney (test non paramétrique de comparaison des rangs) pour tester l'influence du genre sur la dépense énergétique.**$H_0$ : Les distributions de calories sont identiques pour les deux sexes.$H_1$ : Il existe un décalage significatif entre les distributions.
 
-Test d'hypothèse : Influence du genre sur les calories : La normalité
-n'étant pas vérifiée, nous utilisons le test non paramétrique de
-Wilcoxon-Mann-Whitney pour déterminer si la distribution des calories
-brûlées diffère significativement entre les hommes et les femmes
-
-
+Test d'hypothèse : Influence du genre sur les calories : La normalité n'étant pas vérifiée, nous utilisons le test non paramétrique de Wilcoxon-Mann-Whitney pour déterminer si la distribution des calories brûlées diffère significativement entre les hommes et les femmes
 
 ## Dépendance entre variables
 
@@ -676,16 +558,11 @@ res_wilcox
 
 (£) CHOISIR ENTRE:
 
-**La p-valeur obtenue ($p = 1,139 \times 10^{-5}$) nous conduit à rejeter l'hypothèse d'égalité des distributions. Il existe une différence statistiquement significative de calories brûlées entre les hommes et les femmes. Toutefois, nous avons affiné cette analyse en stratifiant les tests par type d'activité (type). Les résultats révèlent une nuance majeure. Pour les activités HIIT, Cardio et Strength, l'effet du genre est significatif ($p < 0,05$). Le métabolisme et le gabarit moyen, généralement plus élevés chez les hommes, expliquent cette différence. Pour le Yoga, la p-valeur ($p = 0,3946$) ne permet pas de rejeter $H_0$.Nous en concluons que l'impact du genre sur la dépense calorique est conditionné par la nature de l'effort fourni.**
+**La p-valeur obtenue (**$p = 1,139 \times 10^{-5}$) nous conduit à rejeter l'hypothèse d'égalité des distributions. Il existe une différence statistiquement significative de calories brûlées entre les hommes et les femmes. Toutefois, nous avons affiné cette analyse en stratifiant les tests par type d'activité (type). Les résultats révèlent une nuance majeure. Pour les activités HIIT, Cardio et Strength, l'effet du genre est significatif ($p < 0,05$). Le métabolisme et le gabarit moyen, généralement plus élevés chez les hommes, expliquent cette différence. Pour le Yoga, la p-valeur ($p = 0,3946$) ne permet pas de rejeter $H_0$.Nous en concluons que l'impact du genre sur la dépense calorique est conditionné par la nature de l'effort fourni.
 
-La p-valeur obtenue est 1.139e-05 qui est trés faible donc nous rejettons
-donc l'hypothèse nulle : il y a une différence significative de calories
-brûlées entre les hommes et les femmes.
+La p-valeur obtenue est 1.139e-05 qui est trés faible donc nous rejettons donc l'hypothèse nulle : il y a une différence significative de calories brûlées entre les hommes et les femmes.
 
-Afin d'affiner l'analyse, nous avons appliqué le test de
-Wilcoxon-Mann-Whitney séparément pour chaque type de sport. Les
-résultats mettent en évidence une nuance importante : Résultats pour
-Type= Yoga
+Afin d'affiner l'analyse, nous avons appliqué le test de Wilcoxon-Mann-Whitney séparément pour chaque type de sport. Les résultats mettent en évidence une nuance importante : Résultats pour Type= Yoga
 
 ```{r}
 #| label: tests_Mann-Whitney
@@ -723,24 +600,13 @@ res_wilcox4 <- wilcox.test(calories ~ gender, data = sub4)
 res_wilcox4
 ```
 
-(£) 
+(£)
 
-**Nous cherchons à déterminer si le comportement des adhérents (choix du sport et niveau d'expérience) est lié au genre. **
+**Nous cherchons à déterminer si le comportement des adhérents (choix du sport et niveau d'expérience) est lié au genre.**
 
-Pour le HIIT, le Cardio et le Strength, la p-valeur est inférieure au
-seuil de 5% . Nous rejettons donc l'hypothèse nulle : pour ces activités
-intenses, le genre a un impact significatif sur la dépense calorique
-(les hommes brûlant généralement plus de calories que les femmes du fait
-de leur métabolisme et gabarit moyen supérieur). En revanche, pour le
-Yoga, la p-valeur est élevée 0.3946 . Nous ne peuvons donc pas rejeter
-l'hypothèse nulle. Cela suggère que pour cette pratique spécifique, la
-dépense calorique ne diffère pas significativement entre les hommes et
-les femmes dans notre échantillon.
+Pour le HIIT, le Cardio et le Strength, la p-valeur est inférieure au seuil de 5% . Nous rejettons donc l'hypothèse nulle : pour ces activités intenses, le genre a un impact significatif sur la dépense calorique (les hommes brûlant généralement plus de calories que les femmes du fait de leur métabolisme et gabarit moyen supérieur). En revanche, pour le Yoga, la p-valeur est élevée 0.3946 . Nous ne peuvons donc pas rejeter l'hypothèse nulle. Cela suggère que pour cette pratique spécifique, la dépense calorique ne diffère pas significativement entre les hommes et les femmes dans notre échantillon.
 
-Cela montre que la conclusion générale ("le genre influence les
-calories") n'est pas absolue : elle dépend du type d'activité.
-
-
+Cela montre que la conclusion générale ("le genre influence les calories") n'est pas absolue : elle dépend du type d'activité.
 
 Nous cherchons désormais à savoir si le comportement des individus (choix du sport, niveau d'expérience) est conditionné par leur genre. Étant donné qu'il s'agit du croisement de deux variables qualitatives, nous appliquons des tests du (Khi-2) d'indépendance
 
@@ -756,10 +622,7 @@ res_chi2_type <- chisq.test(tab_type_gender)
 res_chi2_type
 ```
 
--   Concernant le lien **Type de sport / Genre**, la p-valeur obtenue
-    est très élevée (**p = 0.7052**). Nous ne rejetons donc pas
-    l'hypothèse nulle d'indépendance. Le choix de la discipline sportive
-    ne dépend pas significativement du genre dans notre échantillon
+-   Concernant le lien **Type de sport / Genre**, la p-valeur obtenue est très élevée (**p = 0.7052**). Nous ne rejetons donc pas l'hypothèse nulle d'indépendance. Le choix de la discipline sportive ne dépend pas significativement du genre dans notre échantillon
 
 ```{r}
 #| label: tests_chi2_2
@@ -773,10 +636,7 @@ res_chi2_level <- chisq.test(tab6)
 res_chi2_level
 ```
 
--   De même pour le lien **Niveau / Genre**, la p-valeur est proche de 1
-    (**p = 0.9936**), ce qui confirme une absence totale de dépendance.
-    La répartition des niveaux d'expérience (débutant, intermédiaire,
-    expert) est statistiquement identique chez les hommes et les femmes.
+-   De même pour le lien **Niveau / Genre**, la p-valeur est proche de 1 (**p = 0.9936**), ce qui confirme une absence totale de dépendance. La répartition des niveaux d'expérience (débutant, intermédiaire, expert) est statistiquement identique chez les hommes et les femmes.
 
 ------------------------------------------------------------------------
 
@@ -795,31 +655,15 @@ execute:
 
 # Clustering des individus
 
-Cette section vise à regroupés les individus de l'étude en groupes
-homogènes (clusters). L'analyse repose sur les variables quantitatives
-de notre jeu de données. Les variables qualitatives (`gender` , `type`,
-`level` , `freq`) ont été écartées de la construction des classes.
+Cette section vise à regroupés les individus de l'étude en groupes homogènes (clusters). L'analyse repose sur les variables quantitatives de notre jeu de données. Les variables qualitatives (`gender` , `type`, `level` , `freq`) ont été écartées de la construction des classes.
 
-Pour garantir une segmentation robuste, nous avons exploré plusieurs
-algorithmes de classification sur les données préalablement centrées et
-réduites. Cette normalisation est cruciale pour que les variables à
-forte variance (comme les calories) ne dominent pas le calcul des
-distances par rapport aux variables à faible amplitude (comme la
-taille).
+Pour garantir une segmentation robuste, nous avons exploré plusieurs algorithmes de classification sur les données préalablement centrées et réduites. Cette normalisation est cruciale pour que les variables à forte variance (comme les calories) ne dominent pas le calcul des distances par rapport aux variables à faible amplitude (comme la taille).
 
-K-Means : Cet algorithme itératif réalloue les individus pour minimiser
-l'inertie intra-classe totale.
+K-Means : Cet algorithme itératif réalloue les individus pour minimiser l'inertie intra-classe totale.
 
-Classification Ascendante Hiérarchique (CAH) : Utilisée en première
-approche avec la distance euclidienne et le critère de Ward. Ce critère
-minimise la perte d'inertie inter-classe à chaque étape de regroupement,
-favorisant des classes compactes. Elle nous permet aussi de visualiser
-la structure des données via un dendrogramme.
+Classification Ascendante Hiérarchique (CAH) : Utilisée en première approche avec la distance euclidienne et le critère de Ward. Ce critère minimise la perte d'inertie inter-classe à chaque étape de regroupement, favorisant des classes compactes. Elle nous permet aussi de visualiser la structure des données via un dendrogramme.
 
-Mélanges gaussiens : Approche probabiliste modélisant les données par
-une superposition de lois normales. Elle permet de s'adapter à des
-formes et volumes de classes variés (via la covariance) et d'estimer une
-probabilité d'appartenance pour chaque individu.
+Mélanges gaussiens : Approche probabiliste modélisant les données par une superposition de lois normales. Elle permet de s'adapter à des formes et volumes de classes variés (via la covariance) et d'estimer une probabilité d'appartenance pour chaque individu.
 
 ```{r}
 #| label: setup-cluster
@@ -834,17 +678,11 @@ df_scaled <- scale(df_quanti)
 
 ## K-means
 
-Une première approche naturelle pourrait être d'essayer de minimiser
-l'inertie intra-classe en utilisant un algorithme des K-means. Pour
-connaître le nombre de classes optimales, nous utilisons deux critères.
+Une première approche naturelle pourrait être d'essayer de minimiser l'inertie intra-classe en utilisant un algorithme des K-means. Pour connaître le nombre de classes optimales, nous utilisons deux critères.
 
-Courbe d'inertie : Nous observons une cassure ("coude") à $K=3$ sur la
-@fig-coude_silhouette, indiquant que l'ajout d'un quatrième groupe
-n'apporte pas une baisse significative de l'inertie intra-classe.
+Courbe d'inertie : Nous observons une cassure ("coude") à $K=3$ sur la @fig-coude_silhouette, indiquant que l'ajout d'un quatrième groupe n'apporte pas une baisse significative de l'inertie intra-classe.
 
-Silhouette moyenne : Le score atteint son maximum global pour $K=3$ sur
-la @fig-coude_silhouette, confirmant que les individus sont, en moyenne,
-bien mieux classés dans une structure à trois classes.
+Silhouette moyenne : Le score atteint son maximum global pour $K=3$ sur la @fig-coude_silhouette, confirmant que les individus sont, en moyenne, bien mieux classés dans une structure à trois classes.
 
 ```{r}
 #| label: fig-coude_silhouette
@@ -872,18 +710,9 @@ clust_kmeans <- as.factor(res_km$cluster)
 
 ## Classification hiérarchique
 
-Une seconde approche explorée est celle d'un modèle de classification
-emboîté (CAH). Cette méthode a été privilégiée pour sa capacité à
-révéler l'architecture structurelle des données sans imposer de nombre
-de classes a priori. Le choix du nombre de groupes $K$ repose sur
-plusieurs critères : l'analyse du dendrogramme et le critère de
-Calinski-Harabasz.
+Une seconde approche explorée est celle d'un modèle de classification emboîté (CAH). Cette méthode a été privilégiée pour sa capacité à révéler l'architecture structurelle des données sans imposer de nombre de classes a priori. Le choix du nombre de groupes $K$ repose sur plusieurs critères : l'analyse du dendrogramme et le critère de Calinski-Harabasz.
 
-La @fig-metrics synthétise ces indicateurs. Le dendrogramme met en
-évidence une perte d'inertie très significative lors du passage de 3 à 2
-classes, suggérant que la partition en 3 groupes est la plus naturelle.
-Cette observation est corroborée par l'indicateur de Calinski-Harabasz,
-on observe un maximum du critère à 3 classes.
+La @fig-metrics synthétise ces indicateurs. Le dendrogramme met en évidence une perte d'inertie très significative lors du passage de 3 à 2 classes, suggérant que la partition en 3 groupes est la plus naturelle. Cette observation est corroborée par l'indicateur de Calinski-Harabasz, on observe un maximum du critère à 3 classes.
 
 ```{r}
 #| include: false
@@ -945,29 +774,11 @@ g_pca_comp <- fviz_pca_ind(res_pca_comp,
 grid.arrange(g_table, g_pca_comp, ncol = 2, widths = c(1, 1.6))
 ```
 
-Nous remarquons en observant la @fig-comp-kmeans-cah que la classification issus de ces deux premières méthodes sont
-très similaires. Pour nous en convaincre, nous avons comparé la
-partition issue de la CAH avec celle des K-Means à l'aide de l'Indice de
-Rand Ajusté (ARI). L'ARI obtenu est de 0.723. Cette valeur indique une
-concordance assez bonne entre les deux classifications : les méthodes
-identifient des structures sous-jacentes cohérentes. Nous retenons la
-partition K-Means pour la suite de l'analyse car elle optimise
-directement l'inertie intra-classe.
+Nous remarquons en observant la @fig-comp-kmeans-cah que la classification issus de ces deux premières méthodes sont très similaires. Pour nous en convaincre, nous avons comparé la partition issue de la CAH avec celle des K-Means à l'aide de l'Indice de Rand Ajusté (ARI). L'ARI obtenu est de 0.723. Cette valeur indique une concordance assez bonne entre les deux classifications : les méthodes identifient des structures sous-jacentes cohérentes. Nous retenons la partition K-Means pour la suite de l'analyse car elle optimise directement l'inertie intra-classe.
 
-L'analyse des profils moyens par classe, illustrée en
-@fig-cluster-final, permet de donner une interprétation aux trois
-groupes identifiés. La @fig-cluster-final superpose la projection des
-individus sur le premier plan factoriel de l'ACP et les distributions
-des variables les plus discriminantes.
+L'analyse des profils moyens par classe, illustrée en @fig-cluster-final, permet de donner une interprétation aux trois groupes identifiés. La @fig-cluster-final superpose la projection des individus sur le premier plan factoriel de l'ACP et les distributions des variables les plus discriminantes.
 
-Les trois clusters se distinguent nettement selon deux axes : la
-morphologie et l'intensité de l'entraînement. Le cluster 1 ("Gabarits
-Imposants") regroupe les individus de forte corpulence (poids et BMI
-élevés) s'entraînant à une intensité standard. À l'oppose, le cluster 2
-("Athlètes d'Endurance") se distingue par une performance physique
-maximale (durée, calories) associée à une morphologie sèche. Enfin, le
-cluster 3 ("Fitness / Loisir") rassemble des gabarits plus légers
-engagés dans une pratique d'entretien modérée.
+Les trois clusters se distinguent nettement selon deux axes : la morphologie et l'intensité de l'entraînement. Le cluster 1 ("Gabarits Imposants") regroupe les individus de forte corpulence (poids et BMI élevés) s'entraînant à une intensité standard. À l'oppose, le cluster 2 ("Athlètes d'Endurance") se distingue par une performance physique maximale (durée, calories) associée à une morphologie sèche. Enfin, le cluster 3 ("Fitness / Loisir") rassemble des gabarits plus légers engagés dans une pratique d'entretien modérée.
 
 ```{r}
 #| label: fig-cluster-final
@@ -1004,16 +815,7 @@ grid.arrange(p_pca, p_box, ncol = 2, widths = c(1, 1.4))
 
 ## Mélanges gaussiens
 
-Une dernière approche exploratoire repose sur les Mélanges Gaussiens.
-Afin de challenger et d'affiner la partition en 3 classes précédemment
-identifiée, nous avons testé un nombre de composantes $G$ variant de 2 à
-10. Cette plage de recherche permet de détecter d'éventuelles
-sous-structures fines tout en excluant les modèles trop fragmentés
-($G>10$). Bien que théoriquement optionnel pour les Mélanges Gaussiens,
-nous avons conservé les données centrées-réduites. Ce choix
-méthodologique assure une comparabilité stricte avec les K-Means en
-neutralisant les effets d'unités, garantissant ainsi que les différences
-observées soient purement algorithmiques.
+Une dernière approche exploratoire repose sur les Mélanges Gaussiens. Afin de challenger et d'affiner la partition en 3 classes précédemment identifiée, nous avons testé un nombre de composantes $G$ variant de 2 à 10. Cette plage de recherche permet de détecter d'éventuelles sous-structures fines tout en excluant les modèles trop fragmentés ($G>10$). Bien que théoriquement optionnel pour les Mélanges Gaussiens, nous avons conservé les données centrées-réduites. Ce choix méthodologique assure une comparabilité stricte avec les K-Means en neutralisant les effets d'unités, garantissant ainsi que les différences observées soient purement algorithmiques.
 
 ```{r}
 #| include: false
@@ -1044,11 +846,7 @@ grid.arrange(
 )
 ```
 
-Comme illustré en @fig-model-select, les deux critères convergent vers
-le modèle VEV (volumes variables, formes égales, orientations variables)
-avec un nombre de composantes $K=7$.Ce passage de 3 à 7 classes suggère
-que les groupes identifiés précédemment par les K-Means sont en réalité
-des "méta-classes" composées de sous-populations distinctes.
+Comme illustré en @fig-model-select, les deux critères convergent vers le modèle VEV (volumes variables, formes égales, orientations variables) avec un nombre de composantes $K=7$.Ce passage de 3 à 7 classes suggère que les groupes identifiés précédemment par les K-Means sont en réalité des "méta-classes" composées de sous-populations distinctes.
 
 ```{r}
 #| eval: false
@@ -1128,12 +926,7 @@ ggplot(df_proba, aes(x = Cluster, y = Proba, fill = Cluster)) +
   scale_y_continuous(limits = c(0, 1))
 ```
 
-L'analyse des probabilités d'appartenance (@fig-incertitude-gmm)
-confirme la robustesse de la segmentation. Pour les clusters 1, 5 et 7,
-la probabilité maximale frôle 1, indiquant des profils très typés. À
-l'inverse, les clusters centraux (2, 3, 4) présentent une dispersion
-plus forte, traduisant une frontière plus floue entre ces profils de
-pratiquants "moyens".
+L'analyse des probabilités d'appartenance (@fig-incertitude-gmm) confirme la robustesse de la segmentation. Pour les clusters 1, 5 et 7, la probabilité maximale frôle 1, indiquant des profils très typés. À l'inverse, les clusters centraux (2, 3, 4) présentent une dispersion plus forte, traduisant une frontière plus floue entre ces profils de pratiquants "moyens".
 
 ```{r}
 #| label: fig-comparaison-clsh
@@ -1167,50 +960,15 @@ grid.arrange(g_table, p_mca, ncol = 2, widths = c(1, 1.5))
 
 ## Comparaison
 
-L'analyse croisée des distributions et de la matrice de confusion révèle
-que les 7 classes issues des mélanges constituent une subdivision
-logique des 3 profils K-Means comme nous pouvons le remarquer sur la matrice de
-confusion (@fig-comparaison-clsh).
+L'analyse croisée des distributions et de la matrice de confusion révèle que les 7 classes issues des mélanges constituent une subdivision logique des 3 profils K-Means comme nous pouvons le remarquer sur la matrice de confusion (@fig-comparaison-clsh).
 
-Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils
-morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les
-"Grands" (Cluster 6), discriminant clairement la masse de la taille. De
-même, les "Athlètes d'Endurance" se nuancent par intensité entre
-"Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis
-que le groupe hétérogène "Fitness/Loisir" éclate en trois
-sous-populations (2, 3, 4) capturant des variations métaboliques
-subtiles.
+Le groupe des "Gabarits Imposants" est ainsi scindé en deux profils morphologiques distincts : les "Lourds/Puissants" (Cluster 5) et les "Grands" (Cluster 6), discriminant clairement la masse de la taille. De même, les "Athlètes d'Endurance" se nuancent par intensité entre "Ultra-Endurance" (Cluster 1) et "Endurance Haute" (Cluster 7), tandis que le groupe hétérogène "Fitness/Loisir" éclate en trois sous-populations (2, 3, 4) capturant des variations métaboliques subtiles.
 
-Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes
-confirme la forte cohérence structurelle entre les deux méthodes. Les
-deux approches ne s'opposent pas mais offrent deux niveaux de lecture
-complémentaires. La matrice de confusion démontre une excellente
-compatibilité entre les deux modèles. La partition en 7 classes
-(Mélanges) agit comme une sous-segmentation logique de la partition en 3
-classes (K-Means). Le modèle K-Means/CAH ($K=3$) offre une lecture
-synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il
-est robuste (validé par Silhouette et Calinski-Harabasz) et facile à
-interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse
-supérieure. Il permet notamment de distinguer la "taille" de la "masse"
-(ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux
-d'intensité. L'analyse MCA (@fig-comparaison-clsh) confirme cette
-interprétation : la proximité factorielle entre les classes obtunue à
-partir des Kmeans $K$ et celles obtenue par méthodes de mélanges $G$
-prouve mathématiquement que le modèle de mélange n'est qu'une
-subdivision des classes K-Means.
+Cette inclusion quasi-exclusive des nouvelles classes dans les anciennes confirme la forte cohérence structurelle entre les deux méthodes. Les deux approches ne s'opposent pas mais offrent deux niveaux de lecture complémentaires. La matrice de confusion démontre une excellente compatibilité entre les deux modèles. La partition en 7 classes (Mélanges) agit comme une sous-segmentation logique de la partition en 3 classes (K-Means). Le modèle K-Means/CAH ($K=3$) offre une lecture synthétique et opérationnelle ("Gabarits", "Endurants", "Fitness"). Il est robuste (validé par Silhouette et Calinski-Harabasz) et facile à interpréter. Le modèle de Mélanges ($K=7$) apporte une finesse supérieure. Il permet notamment de distinguer la "taille" de la "masse" (ex: distinction entre les clusters 5 et 6) et de nuancer les niveaux d'intensité. L'analyse MCA (@fig-comparaison-clsh) confirme cette interprétation : la proximité factorielle entre les classes obtunue à partir des Kmeans $K$ et celles obtenue par méthodes de mélanges $G$ prouve mathématiquement que le modèle de mélange n'est qu'une subdivision des classes K-Means.
 
 ## Conclusion
 
-Dans une optique de pilotage général et de clarté, nous recommandons de
-retenir la partition K-Means en 3 classes. Bien que le modèle de mélange
-soit statistiquement optimal (critère BIC), la division en 7 groupes
-complexifie l'interprétation sans nécessairement apporter de levier
-d'action proportionnel pour une segmentation généraliste. La partition
-en 3 classes capture l'essentiel de la variance (morphologie et
-intensité) et permet de définir des profils types suffisamment
-distincts. Le modèle à 7 classes pourra être conservé en tant qu'outil
-de "second niveau" si un besoin de personnalisation très fine se fait
-sentir ultérieurement.
+Dans une optique de pilotage général et de clarté, nous recommandons de retenir la partition K-Means en 3 classes. Bien que le modèle de mélange soit statistiquement optimal (critère BIC), la division en 7 groupes complexifie l'interprétation sans nécessairement apporter de levier d'action proportionnel pour une segmentation généraliste. La partition en 3 classes capture l'essentiel de la variance (morphologie et intensité) et permet de définir des profils types suffisamment distincts. Le modèle à 7 classes pourra être conservé en tant qu'outil de "second niveau" si un besoin de personnalisation très fine se fait sentir ultérieurement.
 
 ```{r}
 #| include: false
@@ -1233,15 +991,11 @@ ggplot(df_alluvial, aes(y = Freq, axis1 = KM, axis2 = GMM)) +
 
 # Étude du nombre de calories brûlées
 
-Cette partie vise à modéliser le nombre de calories brûlées au cours
-d’une séance d’entraînement en fonction des variables explicatives
-disponibles.
+Cette partie vise à modéliser le nombre de calories brûlées au cours d’une séance d’entraînement en fonction des variables explicatives disponibles.
 
 ## Modélisation à partir des variables quantitatives
 
-Nous ajustons un modèle de **régression linéaire multiple** reliant le
-nombre de calories brûlées aux variables quantitatives du jeu de
-données.
+Nous ajustons un modèle de **régression linéaire multiple** reliant le nombre de calories brûlées aux variables quantitatives du jeu de données.
 
 $$
 \text{Calories}_i
@@ -1272,12 +1026,7 @@ plot(model_quant)
 par(mfrow = c(1,1))
 ```
 
-Dans la @fig-diagnostic-quanti, les résidus sont globalement centrés
-autour de zéro, ce qui valide l’hypothèse d’espérance nulle des erreurs.
-Le Q–Q plot indique une déviation modérée à la normalité dans les
-queues, et le graphique « Scale–Location » suggère une légère
-hétéroscédasticité, sans observation fortement influente. En ajoutant
-des interactions, nous observons sur la @fig-diagnostic-quanti-interact que cela permet d’améliorer la qualité des résidus, notamment en réduisant la courbure observée précédemment. Cependant, ce modèle devient très complexe, avec un grand nombre de paramètres, ce qui peut conduire à du sur-ajustement. Cela justifie l’utilisation d’une méthode de sélection de variables afin d’obtenir un modèle plus simple et plus interprétable.
+Dans la @fig-diagnostic-quanti, les résidus sont globalement centrés autour de zéro, ce qui valide l’hypothèse d’espérance nulle des erreurs. Le Q–Q plot indique une déviation modérée à la normalité dans les queues, et le graphique « Scale–Location » suggère une légère hétéroscédasticité, sans observation fortement influente. En ajoutant des interactions, nous observons sur la @fig-diagnostic-quanti-interact que cela permet d’améliorer la qualité des résidus, notamment en réduisant la courbure observée précédemment. Cependant, ce modèle devient très complexe, avec un grand nombre de paramètres, ce qui peut conduire à du sur-ajustement. Cela justifie l’utilisation d’une méthode de sélection de variables afin d’obtenir un modèle plus simple et plus interprétable.
 
 ```{r}
 model2 <- lm(calories ~ (age + weight + height + bpm_ave +
@@ -1293,9 +1042,7 @@ par(mfrow=c(1,1))
 
 ## Effet des variables qualitatives : niveau et type de sport
 
-Nous étudions l’effet du niveau d’expérience et du type de sport sur les
-calories brûlées à l’aide d’une **ANOVA à deux facteurs avec
-interaction**.
+Nous étudions l’effet du niveau d’expérience et du type de sport sur les calories brûlées à l’aide d’une **ANOVA à deux facteurs avec interaction**.
 
 $$Y_{ijk} = \mu + \alpha_i + \beta_j + (\alpha\beta)_{ij} + \varepsilon_{ijk},
 \quad
@@ -1321,18 +1068,11 @@ anova_cal <- aov(calories ~ level * type, data = data)
 summary(anova_cal)
 ```
 
-La @fig-quali-calories montre une augmentation nette du nombre de
-calories brûlées avec le niveau d’expérience, quel que soit le type de
-sport pratiqué. L’ANOVA confirme un effet significatif du niveau
-$(p<2×10^{−16})$, tandis que l’effet du type de sport n’est pas
-significatif. De plus, l’interaction entre le niveau et le type de sport
-n’est pas significative, ce qui indique que l’influence du niveau sur
-les calories brûlées est similaire pour tous les types de sport.
+La @fig-quali-calories montre une augmentation nette du nombre de calories brûlées avec le niveau d’expérience, quel que soit le type de sport pratiqué. L’ANOVA confirme un effet significatif du niveau $(p<2×10^{−16})$, tandis que l’effet du type de sport n’est pas significatif. De plus, l’interaction entre le niveau et le type de sport n’est pas significative, ce qui indique que l’influence du niveau sur les calories brûlées est similaire pour tous les types de sport.
 
 ## Sélection de modèle à l’aide du critère BIC
 
-Nous considérons un modèle complet incluant toutes les variables
-explicatives, correspondant à une **ANCOVA**.
+Nous considérons un modèle complet incluant toutes les variables explicatives, correspondant à une **ANCOVA**.
 
 ```{r}
 model_full <- lm(
@@ -1354,13 +1094,7 @@ regfit <- regsubsets(
 plot(regfit, scale = "bic")
 ```
 
-La @fig-bic-selection illustre la sélection des variables explicatives
-par le critère BIC, qui privilégie des modèles parcimonieux. Nous observons
-que seules certaines variables sont retenues de manière stable, tandis
-que d’autres sont fréquemment exclues, ce qui traduit leur faible
-contribution explicative ou une redondance avec d’autres variables. Le
-meilleur modèle est
-$Y_i=\theta_0+\theta_1x_{\text{age},i}+\theta_2x_{\text{bpm\_vae},i}+\theta_3x_{\text{duration},i}+\beta 1_{\text{gender=male},i}+\varepsilon_i$.
+La @fig-bic-selection illustre la sélection des variables explicatives par le critère BIC, qui privilégie des modèles parcimonieux. Nous observons que seules certaines variables sont retenues de manière stable, tandis que d’autres sont fréquemment exclues, ce qui traduit leur faible contribution explicative ou une redondance avec d’autres variables. Le meilleur modèle est $Y_i=\theta_0+\theta_1x_{\text{age},i}+\theta_2x_{\text{bpm\_vae},i}+\theta_3x_{\text{duration},i}+\beta 1_{\text{gender=male},i}+\varepsilon_i$.
 
 ```{r}
 model_bic <- lm(
@@ -1370,8 +1104,7 @@ model_bic <- lm(
 anova(model_bic, model_full)
 ```
 
-Un test de sous modèle avec le modèle complet nous donne une p-valeur de
-0.2, ce qui nous permet d'accepter le sous-modèle.
+Un test de sous modèle avec le modèle complet nous donne une p-valeur de 0.2, ce qui nous permet d'accepter le sous-modèle.
 
 ```{r fig-diagnostic-bic, fig.width=5, fig.height=3, fig.cap="Résidus en fonction des valeurs ajustées pour le modèle sélectionné par BIC."}
 plot(fitted(model_bic), resid(model_bic),
@@ -1380,18 +1113,11 @@ plot(fitted(model_bic), resid(model_bic),
 abline(h = 0, col = "red")
 ```
 
-La @fig-diagnostic-bic montre que les résidus du modèle sélectionné par
-le BIC sont globalement centrés autour de zéro, ce qui indique une
-absence de biais. Cependant, une légère non-linéaruté apparaît dans la
-relation entre les résidus et les valeurs ajustées, avec une dispersion
-plus marquée pour les valeurs ajustées extrêmes. Cette forme suggère la
-présence d’une hétéroscédasticité modérée sans remettre en cause la
-pertinence globale du modèle dans le cadre de cette étude.
+La @fig-diagnostic-bic montre que les résidus du modèle sélectionné par le BIC sont globalement centrés autour de zéro, ce qui indique une absence de biais. Cependant, une légère non-linéaruté apparaît dans la relation entre les résidus et les valeurs ajustées, avec une dispersion plus marquée pour les valeurs ajustées extrêmes. Cette forme suggère la présence d’une hétéroscédasticité modérée sans remettre en cause la pertinence globale du modèle dans le cadre de cette étude.
 
 # Etude du niveau d'expérience
 
-Nous cherchons désormais à modéliser les $Y_i$ désignant si l'individu est de niveau 1 ou de niveau 2 ou 3 en fonction des autres variables. La variable que l'on cherche à expliquer étant binaire et iid, nous utilisons un modèle logistique. Nous avons donc $Y_i \sim B(\pi_\theta(x_i))$ avec
-$logit(\pi)=\ln(\frac{pi}{1-\pi})=<X,\theta>$.
+Nous cherchons désormais à modéliser les $Y_i$ désignant si l'individu est de niveau 1 ou de niveau 2 ou 3 en fonction des autres variables. La variable que l'on cherche à expliquer étant binaire et iid, nous utilisons un modèle logistique. Nous avons donc $Y_i \sim B(\pi_\theta(x_i))$ avec $logit(\pi)=\ln(\frac{pi}{1-\pi})=<X,\theta>$.
 
 ```{r}
 #| label: logistic_model
@@ -1430,17 +1156,14 @@ regfit_logit <- regsubsets(
 plot(regfit_logit, scale = "bic")
 ```
 
-Cette procédure nous donne le modèle
-$Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$.
+Cette procédure nous donne le modèle $Y_i=\beta_0+\beta_1x_{\text{fat},i}+\beta_2x_{\text{duration},i}$.
 
 ```{r}
 model.bic <- glm(levelBis ~ fat + duration, data = gym, family = binomial(link = "logit"))
 anova(model.bic,model_logit1)
 ```
 
-En réalisant un test de sous-modèle entre le résultat du choix par BIC
-et le modèle complet privé de `level`, nous obtenons une p-valeur de
-0.2365, ce qui nous permet d'accepter le sous-modèle.
+En réalisant un test de sous-modèle entre le résultat du choix par BIC et le modèle complet privé de `level`, nous obtenons une p-valeur de 0.2365, ce qui nous permet d'accepter le sous-modèle.
 
 # Conclusion (proposition)
 
@@ -1452,5 +1175,4 @@ Les déterminants de la dépense énergétique : La modélisation des calories b
 
 La fréquence comme pilier du niveau : Enfin, l'étude du niveau d'expertise souligne que l'assiduité (fréquence hebdomadaire) est le facteur le plus discriminant. Notre modèle logistique parcimonieux confirme que la masse grasse et la durée des séances suffisent à caractériser efficacement le passage d'un niveau débutant à un niveau confirmé.
 
-En définitive, ce projet illustre l'intérêt des méthodes de réduction dimensionnelle et de sélection de modèles (critère BIC) pour transformer un jeu de données complexe en leviers de compréhension opérationnels. 
-
+En définitive, ce projet illustre l'intérêt des méthodes de réduction dimensionnelle et de sélection de modèles (critère BIC) pour transformer un jeu de données complexe en leviers de compréhension opérationnels.
